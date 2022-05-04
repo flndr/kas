@@ -1,6 +1,7 @@
 import { Arbeitszeiten }        from 'Components/Arbeitszeiten';
 import { ListeTage }            from 'Components/ListeTage';
 import { observer }             from 'mobx-react';
+import { useEffect }            from 'react';
 import React                    from 'react';
 import { Divider }              from 'rsuite';
 import { InputNumber }          from 'rsuite';
@@ -10,15 +11,17 @@ import { DateRangePickerProps } from 'rsuite';
 import { DateRangePicker }      from 'rsuite';
 import { DatePicker }           from 'rsuite';
 import { DateRange }            from 'rsuite/DateRangePicker';
-import FormControlLabel         from 'rsuite/FormControlLabel';
 
-import { ReststundenStore }         from 'Stores/ReststundenStore';
 import { useReststundenStore }      from 'Stores/ReststundenStore';
 import { ReststundenStoreProvider } from 'Stores/ReststundenStore';
 
 function App() {
     
     const reststundenStore = useReststundenStore();
+    
+    useEffect( () => {
+        return () => reststundenStore.stopStore();
+    }, [] );
     
     const fixed = ( value : number ) : string => value.toFixed( 2 );
     
@@ -93,7 +96,7 @@ function App() {
                 
                 <Divider/>
                 <Stack>
-                    <div>buchungProTag: { fixed(reststundenStore.buchungProTag) }</div>
+                    <div>buchungProTag: { fixed( reststundenStore.buchungProTag ) }</div>
                     <div>
                         <p>Bis Ablauf-Ende</p>
                         <pre>  Arbeitsstunden: { reststundenStore.zeitZuArbeitenBisAblaufEnde } ({ reststundenStore.zeitZuArbeitenBisAblaufEnde / reststundenStore.arbeitszeitProTag } Tage)</pre>

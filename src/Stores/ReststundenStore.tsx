@@ -1,12 +1,14 @@
-import React                  from 'react';
-import { FC }                 from 'react';
-import { useContext }         from 'react';
-import { createContext }      from 'react';
-import { isSaturday }         from 'date-fns';
-import { getYear }            from 'date-fns';
-import { parse }              from 'date-fns';
-import { format }             from 'date-fns';
-import { isSunOrHoliday }     from 'feiertagejs';
+import { stopPersisting }  from 'mobx-persist-store';
+import { makePersistable } from 'mobx-persist-store';
+import React               from 'react';
+import { FC }              from 'react';
+import { useContext }      from 'react';
+import { createContext }   from 'react';
+import { isSaturday }      from 'date-fns';
+import { getYear }         from 'date-fns';
+import { parse }           from 'date-fns';
+import { format }          from 'date-fns';
+import { isSunOrHoliday }  from 'feiertagejs';
 import { getHolidays }        from 'feiertagejs';
 import { Region }             from 'feiertagejs';
 import { Holiday }            from 'feiertagejs';
@@ -32,13 +34,25 @@ export class ReststundenStore {
     }
     
     //_abwesenheiten : Abwesenheiten = [];
-    private _stundenProTag : number = 8.25;
-    private _reststunden : number   = 200;
-    private _abwesenheiten : Tag[]  = [];
-    private _letzterTagAbruf : Date = ReststundenStore.stringToDate( '2022-05-15' );
+    _abwesenheiten : Tag[]    = [];
+    _stundenProTag : number   = 8.25;
+    _reststunden : number     = 200;
+    _letzterTagAbruf : string = '2022-05-15';
     
     constructor() {
         makeAutoObservable( this );
+        
+        makePersistable( this, {
+            name       : 'ReststundenStore',
+            storage    : window.localStorage,
+            properties : [
+                '_arbeitszeiten',
+                '_abwesenheiten',
+                '_letzterTagAbruf',
+                '_reststunden',
+            ]
+        } );
+        
         const currentDate = new Date();
         const currentYear = getYear( currentDate );
         this.today        = ReststundenStore.dateToString( currentDate );
@@ -47,6 +61,14 @@ export class ReststundenStore {
             ...getHolidays( currentYear + 0, this.region ),
             ...getHolidays( currentYear + 1, this.region ),
         ];
+    }
+    
+    stopStore() {
+        stopPersisting(this);
+    }
+    
+    get letzterTagAbruf() : Date {
+        return ReststundenStore.stringToDate( this._letzterTagAbruf );
     }
     
     get arbeitszeitProWoche() : number {
@@ -90,7 +112,6 @@ export class ReststundenStore {
     }
     
     setReststunden( value : string | number ) {
-        console.log( 'setReststunden', value );
         if ( typeof value === 'string' ) {
             this._reststunden = parseFloat( value );
         } else {
@@ -98,13 +119,9 @@ export class ReststundenStore {
         }
     }
     
-    get letzterTagAbruf() : Date {
-        return this._letzterTagAbruf;
-    }
-    
     setLetzterTagAbruf( date : Date | null ) {
         if ( date ) {
-            this._letzterTagAbruf = date;
+            this._letzterTagAbruf = ReststundenStore.dateToString( date );
         }
     }
     
@@ -122,7 +139,7 @@ export class ReststundenStore {
         
         const start = ReststundenStore.stringToDate( this.today );
         
-        for ( const d = start; d <= this._letzterTagAbruf; d.setDate( d.getDate() + 1 ) ) {
+        for ( const d = start; d <= this.letzterTagAbruf; d.setDate( d.getDate() + 1 ) ) {
             const dateString        = ReststundenStore.dateToString( d );
             const istFeiertagOderWE = this.isFeierOderWE( d );
             tage.push( {
@@ -143,7 +160,8 @@ export class ReststundenStore {
     
     get zeitAbzglAbwesenheitBisAblaufEnde() : number {
         let zeitAbzglAbwesenheit = 0;
-        this.abwesenheiten.filter( a => !a.istFeiertagOderWE ).forEach( a => zeitAbzglAbwesenheit += a.zeitAbzglAbwesenheit );
+        this.abwesenheiten.filter( a => !a.istFeiertagOderWE )
+            .forEach( a => zeitAbzglAbwesenheit += a.zeitAbzglAbwesenheit );
         return zeitAbzglAbwesenheit;
     }
     
@@ -152,7 +170,7 @@ export class ReststundenStore {
     }
     
     get buchungProTag() : number {
-        return this._reststunden / (this.zeitAbzglAbwesenheitBisAblaufEnde / this.arbeitszeitProTag);
+        return this._reststunden / ( this.zeitAbzglAbwesenheitBisAblaufEnde / this.arbeitszeitProTag );
     }
     
     addAbwesenheit( start : Date, end ? : Date | null ) {
