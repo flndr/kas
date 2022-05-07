@@ -29,40 +29,40 @@ export class CalculatorStore {
     
     static readonly dateFormat : string = 'yyyy-MM-dd';
     
-    readonly today : string;
     readonly region : Region = 'BY';
     readonly holidays : Holiday[];
     
     _arbeitszeiten : Arbeitszeit = {
-        [ Wochentag.Montag ]     : 9.25,
-        [ Wochentag.Dienstag ]   : 9.25,
-        [ Wochentag.Mittwoch ]   : 6,
-        [ Wochentag.Donnerstag ] : 9.25,
-        [ Wochentag.Freitag ]    : 7.5,
+        [ Wochentag.Montag ]     : 8,
+        [ Wochentag.Dienstag ]   : 8,
+        [ Wochentag.Mittwoch ]   : 8,
+        [ Wochentag.Donnerstag ] : 8,
+        [ Wochentag.Freitag ]    : 8,
     }
     
     _keinRemote : KeinRemote[] = [];
     _reststundenRZ : number    = 580;
     _reststundenSZ : number    = 300;
+    _ersterTagAbruf : string   = '2022-05-01';
     _letzterTagAbruf : string  = '2022-10-31';
     
     constructor() {
         makeAutoObservable( this );
-        
+        //
         //makePersistable( this, {
         //    name       : 'CalculatorStore',
         //    storage    : window.localStorage,
         //    properties : [
         //        '_arbeitszeiten',
         //        '_keinRemote',
+        //        '_ersterTagAbruf',
         //        '_letzterTagAbruf',
-        //        '_reststunden',
+        //        '_reststundenRZ',
+        //        '_reststundenSZ',
         //    ]
         //} );
         
-        const currentDate = CalculatorStore.stringToDate( '2022-05-01' ); // TODO make input on UI
-        const currentYear = getYear( currentDate );
-        this.today        = CalculatorStore.dateToString( currentDate );
+        const currentYear = getYear( new Date() );
         this.holidays     = [
             ...getHolidays( currentYear - 1, this.region ),
             ...getHolidays( currentYear + 0, this.region ),
@@ -82,6 +82,10 @@ export class CalculatorStore {
         return CalculatorStore.stringToDate( this._letzterTagAbruf );
     }
     
+    get ersterTagAbruf() : Date {
+        return CalculatorStore.stringToDate( this._ersterTagAbruf );
+    }
+    
     get durchschnittleicheArbeitszeitProWoche() : number {
         let zeit = 0;
         Object.values( this._arbeitszeiten ).forEach( z => zeit += z );
@@ -93,33 +97,9 @@ export class CalculatorStore {
     }
     
     private forEachDay( callback : ( date : Date, dateString : string ) => void ) {
-        const start = CalculatorStore.stringToDate( this.today );
-        
-        for ( const d = start; d <= this.letzterTagAbruf; d.setDate( d.getDate() + 1 ) ) {
+        for ( const d = new Date( this.ersterTagAbruf.getTime() ); d <= this.letzterTagAbruf; d.setDate( d.getDate() + 1 ) ) {
             callback( d, CalculatorStore.dateToString( d ) );
         }
-    }
-    
-    get zeitBisAbrufEnde() : Zeiten {
-        let stunden = 0;
-        this.forEachDay( ( date : Date ) => {
-            stunden += this.getStundenProTag( date );
-        } );
-        return {
-            stunden,
-            tage : stunden / this.durchschnittleicheArbeitszeitProTag
-        };
-    }
-    
-    get stundenGearbeitetBisAbrufEnde() {
-        let stunden = 0;
-        //this.tage.forEach( t => stunden += t.stundenGearbeitet )
-        return stunden;
-    }
-    
-    get stundenAbwesenheitBisAbrufEnde() {
-        //return this.stundenBisAbrufEnde - this.stundenGearbeitetBisAbrufEnde;
-        return 0
     }
     
     getArbeitszeit( w : Wochentag ) : number {
@@ -152,6 +132,10 @@ export class CalculatorStore {
         return this._reststundenRZ;
     }
     
+    get reststundenSZ() : number {
+        return this._reststundenSZ;
+    }
+    
     setReststundenRZ( value : string | number ) {
         if ( typeof value === 'string' ) {
             this._reststundenRZ = parseFloat( value );
@@ -160,9 +144,23 @@ export class CalculatorStore {
         }
     }
     
+    setReststundenSZ( value : string | number ) {
+        if ( typeof value === 'string' ) {
+            this._reststundenSZ = parseFloat( value );
+        } else {
+            this._reststundenSZ = value;
+        }
+    }
+    
     setLetzterTagAbruf( date : Date | null ) {
         if ( date ) {
             this._letzterTagAbruf = CalculatorStore.dateToString( date );
+        }
+    }
+    
+    setErsterTagAbruf( date : Date | null ) {
+        if ( date ) {
+            this._ersterTagAbruf = CalculatorStore.dateToString( date );
         }
     }
     
@@ -198,16 +196,12 @@ export class CalculatorStore {
     
     get monate() : string[] {
         const m : string[] = [];
-        
-        const start = CalculatorStore.stringToDate( this.today );
-        
-        for ( const d = start; d <= this.letzterTagAbruf; d.setDate( d.getDate() + 1 ) ) {
-            const firstOfMonthString = CalculatorStore.dateToString( startOfMonth( d ) );
+        this.forEachDay( ( date ) => {
+            const firstOfMonthString = CalculatorStore.dateToString( startOfMonth( date ) );
             if ( !m.includes( firstOfMonthString ) ) {
                 m.push( firstOfMonthString );
             }
-        }
-        
+        } );
         return m;
     }
     

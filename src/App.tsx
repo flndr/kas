@@ -1,4 +1,5 @@
 import styled                   from '@emotion/styled';
+import { Abruf }                from 'Components/Abruf';
 import { Abwesenheiten }        from 'Components/Abwesenheiten';
 import { Zusammenfassung }      from 'Components/Zusammenfassung';
 import { startOfMonth }         from 'date-fns';
@@ -63,49 +64,13 @@ function App() {
         return () => calculator.stopStore();
     }, [] );
     
-    const disabledDate = ( date : Date | undefined ) =>
-        date ? calculator.istFeiertagOderWE( date ) : false;
-    
-    const handleDateChange = ( value : DateRange | Date | null ) => {
-        if ( !value ) {
-            return;
-        }
-        if ( value instanceof Date ) {
-            console.log( 'tag', value );
-        } else {
-            console.log( 'spanne', value[ 0 ], value[ 1 ] );
-        }
-    };
-    
-    const handleOk = ( value : DateRange | Date | null ) => {
-        if ( !value ) {
-            return;
-        }
-        if ( value instanceof Date ) {
-            calculator.addKeinRemote( value );
-        } else {
-            calculator.addKeinRemote( value[ 0 ], value[ 1 ] );
-        }
-    };
-    
-    const pickerProps : Partial<DateRangePickerProps & DatePickerProps> = {
-        cleanable       : false,
-        isoWeek         : true,
-        showWeekNumbers : false,
-        placement       : 'bottomEnd',
-        ranges          : [],
-        onChange        : handleDateChange,
-        onSelect        : handleDateChange,
-        onOk            : handleOk,
-        block           : true
-    };
     
     return <>
         <CalculatorStoreProvider store={ calculator }>
             <Layout>
                 <Left>
                     
-                    <h1>KAP *</h1>
+                    <h1>KAP*</h1>
                     
                     <Divider/>
                     
@@ -122,74 +87,29 @@ function App() {
                     </Calendars>
                     
                     
-                    <h4>Setup</h4>
-                    <p>Ausgehend vom heutigen Tag</p>
-                    <Stack spacing={ 20 }>
-                        <div>
-                            <label>Reststunden Ressource</label>
-                            <InputNumber
-                                style={ { width : '14rem' } }
-                                step={ 0.25 }
-                                value={ calculator.reststundenRZ }
-                                onChange={ value => calculator.setReststundenRZ( value ) }
-                                placeholder={ 'Reststunden RZ' }/>
-                        </div>
-                        <div>
-                            <label>Letzter Tag Abruf</label>
-                            <DatePicker
-                                block={ true }
-                                isoWeek={ true }
-                                cleanable={ false }
-                                showWeekNumbers={ true }
-                                ranges={ [] }
-                                value={ calculator.letzterTagAbruf }
-                                onChange={ value => calculator.setLetzterTagAbruf( value ) }
-                                placeholder={ 'Letzter Tag Abruf' }/>
-                        </div>
-                    </Stack>
-                    
-                    <Divider/>
-                    <Stack>
-                        {/*<div>buchungProTag: { fixed( calculator.buchungProTag ) }</div>*/ }
-                        {/*<div>*/ }
-                        {/*    <p>Bis Ablauf-Ende</p>*/ }
-                        {/*    <pre>stundenBisAbrufEnde: { calculator.stundenBisAbrufEnde }</pre>*/ }
-                        {/*    <pre>stundenAbwesenheitBisAbrufEnde: { calculator.stundenAbwesenheitBisAbrufEnde }</pre>*/ }
-                        {/*    <pre>stundenGearbeitetBisAbrufEnde: { calculator.stundenGearbeitetBisAbrufEnde }</pre>*/ }
-                        {/*</div>*/ }
-                    </Stack>
-                    
                     <Divider/>
                     <h4>* Hinweise zur Nutzung des KAP - Kunden-Abruf-Planer</h4>
                     <p>Der Algorithmus geht davon aus, dass du möglichst viel Zeit Remote arbeiten willst und dabei
                         keine Über- oder Minusstunden machst.</p>
                     <p>Dein Remote-Kontingent (RZ) wird daher immer vor deinem Vor-Ort-Kontingent (SZ) verbaucht.</p>
                     <p>Sind alle Kontingente (RZ+SZ) ausgeschöpft wird auf extern (ISO) verbucht.</p>
-
+                
                 </Left>
                 
                 <Right>
                     
-                    <h4>Arbeitszeiten</h4>
-                    
-                    <Arbeitszeiten/>
-                    
+                    <h4>Abruf</h4>
+                    <Abruf/>
                     <Divider/>
                     
                     <h4>Abwesenheiten</h4>
-                    
                     <Abwesenheiten/>
+                    <Divider/>
+    
+                    <h4>Arbeitszeiten</h4>
+                    <Arbeitszeiten/>
+                    <Divider/>
                     
-                    <DateRangePicker
-                        { ...pickerProps }
-                        placeholder={ 'Zeitspanne wählen...' }
-                    />
-                    <DatePicker
-                        { ...pickerProps }
-                        disabledDate={ disabledDate }
-                        placeholder={ 'Tag wählen...' }
-                    />
-                
                 
                 </Right>
             </Layout>
