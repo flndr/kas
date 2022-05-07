@@ -68,37 +68,25 @@ export const TimeBar = observer( ( props : TimeBarProps ) => {
     const showDigits = true;
     
     let frei = 0;
-    let rz   = 0;
-    let sz   = 0;
-    let iso  = 0;
-    let all  = tag.stundenZuArbeiten;
-    
-    if ( tag.keinRemote ) {
-        const z = () => tag.keinRemote!.ganzerTag
-                        ? tag.stundenZuArbeiten
-                        : ( tag.keinRemote!.stundenAbwesend || 0 );
-        switch ( tag.keinRemote.typ ) {
-            case KeinRemoteTyp.ABWESEND:
-                frei = z();
-                break;
-            case KeinRemoteTyp.ISO:
-                iso = z();
-                break;
-            case KeinRemoteTyp.VORORT:
-            default:
-                sz = z();
-        }
-        
-    } else {
-        rz = tag.stundenZuArbeiten;
+    let rz   = tag.stundenRemote;
+    let sz   = tag.stundenVorOrtRest;
+    let iso  = tag.stundenExternGeplant;
+
+    if(tag.istUrlaubstag) {
+        frei = tag.stundenZuArbeiten;
+        rz = 0;
+        sz = 0;
+        iso = 0;
     }
+
+
     
-    const p = ( amount : number ) => all / 100 * amount * 100;
+    const p = ( amount : number ) => tag.stundenZuArbeiten / 100 * amount * 100;
     
     return <Container showDigits={ showDigits }>
         <FreiBar percent={ p( frei ) }><span>{ twoDigit( frei ) }</span></FreiBar>
         <RzBar percent={ p( rz ) }><span>{ twoDigit( rz ) }</span></RzBar>
-        <IsoBar percent={ p( iso ) }><span>{ twoDigit( iso ) }</span></IsoBar>
         <SzBar percent={ p( sz ) }><span>{ twoDigit( sz ) }</span></SzBar>
+        <IsoBar percent={ p( iso ) }><span>{ twoDigit( iso ) }</span></IsoBar>
     </Container>
 } );

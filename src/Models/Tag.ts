@@ -1,9 +1,17 @@
-import { KeinRemote } from 'Models/KeinRemote';
-
 export interface Tag {
+    date : Date;
     dateString : string;
-    keinRemote? : KeinRemote
+    istLetzterTagRZ : boolean;
+    istLetzterTagSZ : boolean;
     istArbeitstag : boolean;
+    istFeiertagOderWE : boolean;
+    istUrlaubstag : boolean;
     stundenZuArbeiten : number;
     stundenGearbeitet : number;
+    stundenUrlaub : number;
+    stundenRemote : number;
+    stundenExternGeplant : number;
+    stundenExternRest : number;
+    stundenVorOrtGeplant : number;
+    stundenVorOrtRest : number;
 }

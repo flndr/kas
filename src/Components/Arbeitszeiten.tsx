@@ -5,6 +5,7 @@ import styled          from '@emotion/styled';
 
 import { useCalculatorStore } from 'Stores/CalculatorStore';
 import { Wochentag }          from 'Models/Enum/Wochentag';
+import { twoDigit }           from 'Util/twoDigit';
 
 const Zeile = styled.div`
   display         : flex;
@@ -45,7 +46,7 @@ export const Arbeitszeiten = observer( () => {
                     buttonAppearance={ 'subtle' }
                     size={ 'sm' }
                     step={ 0.25 }
-                    value={ calculator.getArbeitszeit( Wochentag[ key ] ) }
+                    value={ twoDigit(calculator.getArbeitszeit( Wochentag[ key ] ) ) }
                     onChange={ value => calculator.setArbeitszeit( Wochentag[ key ], value ) }
                     placeholder={ w }/>
             </Zeile>

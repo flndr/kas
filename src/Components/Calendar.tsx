@@ -21,15 +21,19 @@ const Container = styled.div`
 `;
 
 const Cell = styled.div`
-  flex-grow     : 1;
-  width         : ${ 100 / 8 }%;
-  padding       : 4px;
-  margin        : 2px;
-  overflow      : hidden;
-  border-radius : 6px;
-  cursor        : default;
-  text-align    : center;
-  color         : var(--rs-border-primary);
+  flex-grow       : 1;
+  width           : ${ 100 / 8 }%;
+  padding         : 4px;
+  margin          : 2px;
+  overflow        : hidden;
+  border-radius   : 6px;
+  cursor          : default;
+  text-align      : center;
+  color           : var(--rs-border-primary);
+  display         : flex;
+  justify-content : center;
+  align-items     : center;
+  height          : 3rem;
 `;
 
 const Day = styled( Cell )`
@@ -48,15 +52,15 @@ const Month = styled( Cell )`
 `;
 
 interface Props {
-    start : Date;
+    start : string;
 }
 
 export const Calendar = observer( ( props : Props ) => {
     
     const calculator : CalculatorStore = useCalculatorStore();
-    
-    const firstDay = startOfWeek( startOfMonth( props.start ), { weekStartsOn : 1 } );
-    const lastDay  = endOfWeek( endOfMonth( props.start ), { weekStartsOn : 1 } );
+    const start                        = CalculatorStore.stringToDate( props.start );
+    const firstDay                     = startOfWeek( startOfMonth( start ), { weekStartsOn : 1 } );
+    const lastDay                      = endOfWeek( endOfMonth( start ), { weekStartsOn : 1 } );
     
     const days : Date[] = [];
     
@@ -68,8 +72,8 @@ export const Calendar = observer( ( props : Props ) => {
     
     const wochentage = [ ...Object.keys( Wochentag ), 'Samstag', 'Sonntag' ];
     
-    return <>
-        <Month>{ format( props.start, 'LLLL', { locale : de } ) }</Month>
+    return <div>
+        <Month>{ format( start, 'LLLL', { locale : de } ) }</Month>
         <Container>
             { wochentage.map( t => {
                 return <Cell key={ 'header-tag-' + t }>
@@ -79,7 +83,7 @@ export const Calendar = observer( ( props : Props ) => {
             { days.map( date => {
                 const dateString = CalculatorStore.dateToString( date );
                 const dayString  = format( date, 'd' );
-                const isInMonth  = props.start.getMonth() === date.getMonth();
+                const isInMonth  = start.getMonth() === date.getMonth();
                 const key        = 'cal-day-' + dateString;
                 
                 if ( !isInMonth ) {
@@ -88,19 +92,21 @@ export const Calendar = observer( ( props : Props ) => {
                     </Cell>;
                 }
                 
-                const tag = calculator.tage.find( t => t.dateString === dateString );
+                const tag = calculator.zusammenfassung.tage.find( t => t.dateString === dateString );
                 
-                if ( !tag || !tag.istArbeitstag ) {
+                if(!tag || tag.istFeiertagOderWE) {
                     return <NoWorkingDay key={ key }>
                         { dayString }
                     </NoWorkingDay>;
                 }
                 
                 return <Day key={ key }>
-                    { dayString }<br/>
-                    <TimeBar tag={ tag }/>
+                    <div style={ { width : '100%' } }>
+                        { dayString }<br/>
+                        <TimeBar tag={ tag }/>
+                    </div>
                 </Day>
             } ) }
         </Container>
-    </>
+    </div>
 } );
