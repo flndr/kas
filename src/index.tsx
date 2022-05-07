@@ -1,8 +1,9 @@
 import React    from 'react';
 import ReactDOM from 'react-dom';
 
-import 'rsuite/dist/rsuite.min.css';
 import 'typeface-jetbrains-mono';
+import 'typeface-vt323';
+import './rsuite.css';
 import './index.css';
 
 import App from './App';

@@ -1,8 +1,7 @@
-import { Arbeitszeiten }        from 'Components/Arbeitszeiten';
-import { ListeTage }            from 'Components/ListeTage';
-import { observer }             from 'mobx-react';
+import { startOfMonth }         from 'date-fns';
 import { useEffect }            from 'react';
 import React                    from 'react';
+import { observer }             from 'mobx-react';
 import { Divider }              from 'rsuite';
 import { InputNumber }          from 'rsuite';
 import { Stack }                from 'rsuite';
@@ -11,22 +10,25 @@ import { DateRangePickerProps } from 'rsuite';
 import { DateRangePicker }      from 'rsuite';
 import { DatePicker }           from 'rsuite';
 import { DateRange }            from 'rsuite/DateRangePicker';
+import { CalculatorStore }      from 'Stores/CalculatorStore';
 
-import { useReststundenStore }      from 'Stores/ReststundenStore';
-import { ReststundenStoreProvider } from 'Stores/ReststundenStore';
+import { useCalculatorStore }      from 'Stores/CalculatorStore';
+import { CalculatorStoreProvider } from 'Stores/CalculatorStore';
+import { Arbeitszeiten }           from 'Components/Arbeitszeiten';
+import { Calendar }                from 'Components/Calendar';
 
 function App() {
     
-    const reststundenStore = useReststundenStore();
+    const calculator = useCalculatorStore();
     
     useEffect( () => {
-        return () => reststundenStore.stopStore();
+        return () => calculator.stopStore();
     }, [] );
     
-    const fixed = ( value : number ) : string => value.toFixed( 2 );
+    
     
     const disabledDate = ( date : Date | undefined ) =>
-        date ? reststundenStore.isFeierOderWE( date ) : false;
+        date ? calculator.isFeiertagOderWE( date ) : false;
     
     const handleDateChange = ( value : DateRange | Date | null ) => {
         if ( !value ) {
@@ -44,10 +46,9 @@ function App() {
             return;
         }
         if ( value instanceof Date ) {
-            reststundenStore.addAbwesenheit( value );
+            calculator.addKeinRemote( value );
         } else {
-            console.log( 'etz?', value );
-            reststundenStore.addAbwesenheit( value[ 0 ], value[ 1 ] );
+            calculator.addKeinRemote( value[ 0 ], value[ 1 ] );
         }
     };
     
@@ -61,10 +62,12 @@ function App() {
         onOk            : handleOk
     };
     
+    const ersterTagMonat = startOfMonth( CalculatorStore.stringToDate( calculator.tage[ 0 ].dateString ) );
+    
     return <>
-        <ReststundenStoreProvider store={ reststundenStore }>
+        <CalculatorStoreProvider store={ calculator }>
             <div>
-                <h1>Reststunden-Berechnung</h1>
+                <h1>RZ-Exhauster</h1>
                 
                 <Divider/>
                 
@@ -76,8 +79,8 @@ function App() {
                         <InputNumber
                             style={ { width : '14rem' } }
                             step={ 0.25 }
-                            value={ reststundenStore.reststunden }
-                            onChange={ value => reststundenStore.setReststunden( value ) }
+                            value={ calculator.reststunden }
+                            onChange={ value => calculator.setReststunden( value ) }
                             placeholder={ 'Reststunden Ressource' }/>
                     </div>
                     <div>
@@ -88,26 +91,28 @@ function App() {
                             cleanable={ false }
                             showWeekNumbers={ true }
                             ranges={ [] }
-                            value={ reststundenStore.letzterTagAbruf }
-                            onChange={ value => reststundenStore.setLetzterTagAbruf( value ) }
+                            value={ calculator.letzterTagAbruf }
+                            onChange={ value => calculator.setLetzterTagAbruf( value ) }
                             placeholder={ 'Letzter Tag Abruf' }/>
                     </div>
                 </Stack>
                 
-                <Divider/>
-                <Stack>
-                    <div>buchungProTag: { fixed( reststundenStore.buchungProTag ) }</div>
-                    <div>
-                        <p>Bis Ablauf-Ende</p>
-                        <pre>  Arbeitsstunden: { reststundenStore.zeitZuArbeitenBisAblaufEnde } ({ reststundenStore.zeitZuArbeitenBisAblaufEnde / reststundenStore.arbeitszeitProTag } Tage)</pre>
-                        <pre>  - Abwesenheit: { reststundenStore.zeitAbwesenheitBisAblaufEnde } ({ reststundenStore.zeitAbwesenheitBisAblaufEnde / reststundenStore.arbeitszeitProTag } Tage)</pre>
-                        <pre>verfügbare Arbeitszeit: { reststundenStore.zeitAbzglAbwesenheitBisAblaufEnde } ({ reststundenStore.zeitAbzglAbwesenheitBisAblaufEnde / reststundenStore.arbeitszeitProTag } Tage)</pre>
-                    
-                    </div>
-                </Stack>
+                {/*<Divider/>*/ }
+                {/*<Stack>*/ }
+                {/*    <div>buchungProTag: { fixed( calculator.buchungProTag ) }</div>*/ }
+                {/*    <div>*/ }
+                {/*        <p>Bis Ablauf-Ende</p>*/ }
+                {/*        <pre>  Arbeitsstunden: { calculator.zeitZuArbeitenBisAblaufEnde } ({ calculator.zeitZuArbeitenBisAblaufEnde / calculator.arbeitszeitProTag } Tage)</pre>*/ }
+                {/*        <pre>  - Abwesenheit: { calculator.zeitAbwesenheitBisAblaufEnde } ({ calculator.zeitAbwesenheitBisAblaufEnde / calculator.arbeitszeitProTag } Tage)</pre>*/ }
+                {/*        <pre>verfügbare Arbeitszeit: { calculator.zeitAbzglAbwesenheitBisAblaufEnde } ({ calculator.zeitAbzglAbwesenheitBisAblaufEnde / calculator.arbeitszeitProTag } Tage)</pre>*/ }
+                {/*    */ }
+                {/*    </div>*/ }
+                {/*</Stack>*/ }
                 <Divider/>
                 
                 <h3>Urlaub/Abwesenheiten anlegen</h3>
+                
+                
                 <DateRangePicker
                     { ...pickerProps }
                     placeholder={ 'Zeitspanne wählen...' }
@@ -123,11 +128,11 @@ function App() {
                 <Arbeitszeiten/>
                 
                 <h3>Tage</h3>
-                <ListeTage/>
+                <Calendar start={ ersterTagMonat }/>
             
             
             </div>
-        </ReststundenStoreProvider>
+        </CalculatorStoreProvider>
     </>;
 }
 

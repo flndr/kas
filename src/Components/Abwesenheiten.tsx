@@ -1,19 +1,20 @@
-import { observer }                            from 'mobx-react';
-import React                                   from 'react';
-import { Abwesenheiten as AbwesenheitenModel } from 'Models/Anwesenheiten';
-import { useReststundenStore }                 from 'Stores/ReststundenStore';
+import React        from 'react';
+import { observer } from 'mobx-react';
+
+import { CalculatorStore }    from 'Stores/CalculatorStore';
+import { useCalculatorStore } from 'Stores/CalculatorStore';
 
 interface Props {
 }
 
 export const Abwesenheiten = observer( () => {
     
-    const reststundenStore = useReststundenStore();
+    const calculator : CalculatorStore = useCalculatorStore();
     
     return <>
-        { reststundenStore.abwesenheiten.map( a => {
-            return <div key={ a.dateString }>
-                { a.dateString } - { a.zeitAbzglAbwesenheit }
+        { calculator.keinRemote.map( kr => {
+            return <div key={ kr.dateString }>
+                { kr.dateString } - { kr.typ } - { kr.stundenAbwesend }
             </div>
         } ) }
     </>

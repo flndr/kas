@@ -1,17 +1,18 @@
-import React                   from 'react';
-import styled                  from '@emotion/styled';
-import { InputNumber }         from 'rsuite';
-import { observer }            from 'mobx-react';
-import { useReststundenStore } from 'Stores/ReststundenStore';
-import { Wochentag }           from 'Models/Wochentag';
+import React           from 'react';
+import { InputNumber } from 'rsuite';
+import { observer }    from 'mobx-react';
+import styled          from '@emotion/styled';
+
+import { useCalculatorStore } from 'Stores/CalculatorStore';
+import { Wochentag }          from 'Models/Enum/Wochentag';
 
 const Zeile = styled.div`
   display         : flex;
   justify-content : flex-start;
   align-items     : center;
-  
+
   & + & {
-    margin-top: 6px;
+    margin-top : 6px;
   }
 `;
 
@@ -20,7 +21,11 @@ const Label = styled.div`
 `;
 
 const InputNumberStyled = styled( InputNumber )`
-  width : 5rem;
+  width : 4.75rem;
+
+  & > input {
+    padding-right : 0 !important;
+  }
 `;
 
 const Gesamt = styled.div`
@@ -29,7 +34,7 @@ const Gesamt = styled.div`
 
 export const Arbeitszeiten = observer( () => {
     
-    const reststundenStore = useReststundenStore();
+    const calculator = useCalculatorStore();
     
     return <>
         { Object.keys( Wochentag ).map( w => {
@@ -37,20 +42,22 @@ export const Arbeitszeiten = observer( () => {
             return <Zeile key={ w }>
                 <Label>{ w }</Label>
                 <InputNumberStyled
+                    buttonAppearance={ 'subtle' }
+                    size={ 'sm' }
                     step={ 0.25 }
-                    value={ reststundenStore.getArbeitszeit( Wochentag[ key ] ) }
-                    onChange={ value => reststundenStore.setArbeitszeit( Wochentag[ key ], value ) }
+                    value={ calculator.getArbeitszeit( Wochentag[ key ] ) }
+                    onChange={ value => calculator.setArbeitszeit( Wochentag[ key ], value ) }
                     placeholder={ w }/>
             </Zeile>
         } ) }
         <Zeile>
             <Label>pro Woche</Label>
-            <Gesamt>{ reststundenStore.arbeitszeitProWoche }</Gesamt>
+            <Gesamt>{ calculator.durchschnittleicheArbeitszeitProWoche }</Gesamt>
         </Zeile>
-    
+        
         <Zeile>
             <Label>pro Tag</Label>
-            <Gesamt>{ reststundenStore.arbeitszeitProTag }</Gesamt>
+            <Gesamt>{ calculator.durchschnittleicheArbeitszeitProTag }</Gesamt>
         </Zeile>
     
     </>
