@@ -1,18 +1,18 @@
-import styled           from '@emotion/styled';
-import { TimeBar }      from 'Components/TimeBar';
-import { startOfMonth } from 'date-fns';
-import { format }       from 'date-fns';
-import { endOfWeek }    from 'date-fns';
-import { endOfMonth }   from 'date-fns';
-import { startOfWeek }  from 'date-fns';
-import { de }           from 'date-fns/locale';
-import { Wochentag }    from 'Models/Enum/Wochentag';
-import React            from 'react';
-import { observer }     from 'mobx-react';
-
-import { Tag }                from 'Models/Tag';
+import styled                 from '@emotion/styled';
+import { startOfMonth }       from 'date-fns';
+import { format }             from 'date-fns';
+import { endOfWeek }          from 'date-fns';
+import { endOfMonth }         from 'date-fns';
+import { startOfWeek }        from 'date-fns';
+import { de }                 from 'date-fns/locale';
+import React                  from 'react';
+import { observer }           from 'mobx-react';
+import { TimeBar }            from 'Components/TimeBar';
+import { Wochentag }          from 'Models/Enum/Wochentag';
 import { CalculatorStore }    from 'Stores/CalculatorStore';
 import { useCalculatorStore } from 'Stores/CalculatorStore';
+import { dateToString }       from 'Util/date';
+import { stringToDate }       from 'Util/date';
 
 const Container = styled.div`
   display         : flex;
@@ -58,7 +58,7 @@ interface Props {
 export const Calendar = observer( ( props : Props ) => {
     
     const calculator : CalculatorStore = useCalculatorStore();
-    const start                        = CalculatorStore.stringToDate( props.start );
+    const start                        = stringToDate( props.start );
     const firstDay                     = startOfWeek( startOfMonth( start ), { weekStartsOn : 1 } );
     const lastDay                      = endOfWeek( endOfMonth( start ), { weekStartsOn : 1 } );
     
@@ -81,7 +81,7 @@ export const Calendar = observer( ( props : Props ) => {
                 </Cell>
             } ) }
             { days.map( date => {
-                const dateString = CalculatorStore.dateToString( date );
+                const dateString = dateToString( date );
                 const dayString  = format( date, 'd' );
                 const isInMonth  = start.getMonth() === date.getMonth();
                 const key        = 'cal-day-' + dateString;
@@ -94,7 +94,7 @@ export const Calendar = observer( ( props : Props ) => {
                 
                 const tag = calculator.zusammenfassung.tage.find( t => t.dateString === dateString );
                 
-                if(!tag || tag.istFeiertagOderWE) {
+                if ( !tag || tag.istFeiertagOderWE ) {
                     return <NoWorkingDay key={ key }>
                         { dayString }
                     </NoWorkingDay>;
@@ -102,7 +102,7 @@ export const Calendar = observer( ( props : Props ) => {
                 
                 return <Day key={ key }>
                     <div style={ { width : '100%' } }>
-                        { dayString }<br/>
+                        { dayString }{ tag.istLetzterTagRZ || tag.istLetzterTagSZ ? ' !!!' : '' }<br/>
                         <TimeBar tag={ tag }/>
                     </div>
                 </Day>

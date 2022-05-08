@@ -1,9 +1,11 @@
-import styled            from '@emotion/styled';
-import { KeinRemoteTyp } from 'Models/Enum/KeinRemoteTyp';
-import React             from 'react';
-import { observer }      from 'mobx-react';
+import styled        from '@emotion/styled';
+import { Color }     from 'Color';
+import { TerminTyp } from 'Models/Enum/TerminTyp';
+import React         from 'react';
+import { observer }  from 'mobx-react';
 
 import { Tag }      from 'Models/Tag';
+import { COLOR }    from 'rsuite/utils';
 import { twoDigit } from 'Util/twoDigit';
 
 interface ContainerProps {
@@ -43,19 +45,19 @@ const Bar = styled.div<ChildProps>`
 `;
 
 const FreiBar = styled( Bar )`
-  background-color : #7c7c7c;
+  background-color : ${ Color.URLAUB };
 `;
 
 const RzBar = styled( Bar )`
-  background-color : #0dd03f;
+  background-color : ${ Color.REMOTE };
 `;
 
 const IsoBar = styled( Bar )`
-  background-color : #00a9dc;
+  background-color : ${ Color.EXTERN };
 `;
 
 const SzBar = styled( Bar )`
-  background-color : #ff2600;
+  background-color : ${ Color.VORORT };
 `;
 
 interface TimeBarProps {
@@ -67,24 +69,31 @@ export const TimeBar = observer( ( props : TimeBarProps ) => {
     const tag        = props.tag;
     const showDigits = true;
     
-    let frei = 0;
-    let rz   = tag.stundenRemote;
-    let sz   = tag.stundenVorOrtRest;
-    let iso  = tag.stundenExternGeplant;
-
-    if(tag.istUrlaubstag) {
-        frei = tag.stundenZuArbeiten;
-        rz = 0;
-        sz = 0;
-        iso = 0;
+    if ( tag.istUrlaubstag ) {
+        return <Container showDigits={ showDigits }>
+            <FreiBar percent={ 100 }>{ twoDigit( tag.stundenUrlaub ) }</FreiBar>
+        </Container>;
     }
-
-
+    
+    if ( tag.istExternGanztaegig ) {
+        return <Container showDigits={ showDigits }>
+            <IsoBar percent={ 100 }>{ twoDigit( tag.stundenExternGeplant ) }</IsoBar>
+        </Container>;
+    }
     
     const p = ( amount : number ) => tag.stundenZuArbeiten / 100 * amount * 100;
     
+    let rz  = tag.stundenRemote;
+    let sz  = tag.stundenVorOrtRest + tag.stundenVorOrtGeplant;
+    let iso = tag.stundenExternGeplant + tag.stundenExternRest;
+    
+    if ( tag.dateString === '2022-05-20' ) {
+        console.log( tag.dateString, {
+            rz, sz, iso
+        } )
+    }
+    
     return <Container showDigits={ showDigits }>
-        <FreiBar percent={ p( frei ) }><span>{ twoDigit( frei ) }</span></FreiBar>
         <RzBar percent={ p( rz ) }><span>{ twoDigit( rz ) }</span></RzBar>
         <SzBar percent={ p( sz ) }><span>{ twoDigit( sz ) }</span></SzBar>
         <IsoBar percent={ p( iso ) }><span>{ twoDigit( iso ) }</span></IsoBar>

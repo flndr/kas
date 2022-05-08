@@ -6,6 +6,7 @@ export interface Tag {
     istArbeitstag : boolean;
     istFeiertagOderWE : boolean;
     istUrlaubstag : boolean;
+    istExternGanztaegig : boolean;
     stundenZuArbeiten : number;
     stundenGearbeitet : number;
     stundenUrlaub : number;

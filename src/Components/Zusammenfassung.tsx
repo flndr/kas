@@ -10,22 +10,6 @@ import { TimeBar }            from 'Components/TimeBar';
 import { CalculatorStore }    from 'Stores/CalculatorStore';
 import { useCalculatorStore } from 'Stores/CalculatorStore';
 
-const Container = styled.div`
-  display         : flex;
-  flex-wrap       : nowrap;
-  justify-content : stretch;
-`;
-
-const Column = styled.div`
-`;
-
-const Left = styled( Column )`
-  padding-right : 2rem;
-`;
-
-const Right = styled( Column )`
-`;
-
 const Box = styled.div`
   flex-grow     : 1;
   width         : ${ 100 / 8 }%;
@@ -52,11 +36,6 @@ const Line = styled.div`
   & + & {
     margin-top : 0.25rem;
   }
-
-  & > *:first-of-type {
-    margin-right : 2rem;
-  }
-
 `;
 
 const Hr = styled.div`
@@ -67,6 +46,13 @@ const Hr = styled.div`
   opacity          : 0.5;
 `;
 
+const Pre = styled.pre`
+  font-family : inherit;
+  display     : block;
+  overflow    : visible;
+  margin      : 0;
+`;
+
 interface Props {
 }
 
@@ -75,48 +61,90 @@ export const Zusammenfassung = observer( ( props : Props ) => {
     const calculator : CalculatorStore = useCalculatorStore();
     
     const stundenZuArbeiten = calculator.zusammenfassung.tage
-                          .map( t => t.stundenZuArbeiten )
-                          .reduce( ( prev, cur ) => prev + cur, 0 );
+                                        .map( t => t.stundenZuArbeiten )
+                                        .reduce( ( prev, cur ) => prev + cur, 0 );
     
     const stundenUrlaub = calculator.zusammenfassung.tage
-                          .map( t => t.stundenUrlaub )
-                          .reduce( ( prev, cur ) => prev + cur, 0 );
+                                    .map( t => t.stundenUrlaub )
+                                    .reduce( ( prev, cur ) => prev + cur, 0 );
     
     const stundenGearbeitet = calculator.zusammenfassung.tage
-                          .map( t => t.stundenGearbeitet )
-                          .reduce( ( prev, cur ) => prev + cur, 0 );
+                                        .map( t => t.stundenGearbeitet )
+                                        .reduce( ( prev, cur ) => prev + cur, 0 );
+    
+    const stundenRemote = calculator.zusammenfassung.tage
+                                    .map( t => t.stundenRemote )
+                                    .reduce( ( prev, cur ) => prev + cur, 0 );
     
     return <>
-        <div>stundenZuArbeiten: {stundenZuArbeiten}</div>
-        <div>stundenGearbeitet: {stundenGearbeitet}</div>
-        <div>stundenUrlaub: {stundenUrlaub}</div>
-        <Container>
-            <Left>
-                <Line><span>Zeit bis Abruf-Ende</span><Zeiten z={ calculator.zusammenfassung.zeitGesamt }/></Line>
-                <Line><span> - davon Feiertage/WE</span><Zeiten
-                    z={ calculator.zusammenfassung.zeitFeierOderWE }/></Line>
-                <Line><span> - davon Urlaub</span><Zeiten z={ calculator.zusammenfassung.zeitUrlaub }/></Line>
-                <Hr/>
-                <Line><span> = Zeit zu Arbeiten</span><Zeiten z={ calculator.zusammenfassung.zeitZuArbeiten }/></Line>
-                <Line><span> - davon geplant vor Ort (SZ)</span><Zeiten
-                    z={ calculator.zusammenfassung.zeitVorOrtRest }/></Line>
-                <Line><span> - davon geplant extern (ISO)</span><Zeiten
-                    z={ calculator.zusammenfassung.zeitExternGeplant }/></Line>
-                <Hr/>
-                <Line><span> = RZ benötigt</span><Zeiten z={ calculator.zusammenfassung.zeitRemote }/></Line>
-                <Line><span> - RZ verfügbar</span><Zeiten z={ {
-                    tage    : calculator.reststundenRZ / calculator.durchschnittleicheArbeitszeitProTag,
-                    stunden : calculator.reststundenRZ
-                } }/></Line>
-                <Hr/>
-                <Line><span>RZ saldo</span><Zeiten z={ { tage : 0, stunden : 0 } }/></Line>
-            </Left>
-            <Right>
-                <BoxRZ>
-                    <CheckIcon/>
-                </BoxRZ>
-            </Right>
+        {/*<div>stundenZuArbeiten: { stundenZuArbeiten }</div>*/ }
+        {/*<div>stundenGearbeitet: { stundenGearbeitet }</div>*/ }
+        {/*<div>stundenUrlaub: { stundenUrlaub }</div>*/ }
+        {/*<div>stundenRemote: { stundenRemote }</div>*/ }
         
-        </Container>
+        
+        <h4>Abruf</h4>
+        <Line>
+            <Pre>Abruf gesamt</Pre>
+            <Zeiten z={ calculator.abrufZeitenGesamt }/>
+        </Line>
+        
+        <Line>
+            <Pre>- davon geplant vor Ort (SZ)</Pre>
+            <Zeiten z={ calculator.zusammenfassung.zeitVorOrtGeplant }/>
+        </Line>
+        <Hr/>
+        <Line>
+            <Pre>= Rest</Pre>
+            <Zeiten z={ calculator.abgerufenRestZeiten }/>
+        </Line>
+        <Line>
+            <Pre>- davon Remote (RZ)</Pre>
+            <Zeiten z={ calculator.zusammenfassung.zeitRemote }/>
+        </Line>
+        <Line>
+            <Pre>- davon vor Ort (SZ)</Pre>
+            <Zeiten z={ calculator.zusammenfassung.zeitVorOrtRest }/>
+        </Line>
+        <Hr/>
+        <Line>
+            <Pre>= Reststunden</Pre>
+            <Zeiten z={ calculator.saldoAbruf }/>
+        </Line>
+        
+        
+        <h4>Reststunden</h4>
+        <Line>
+            <Pre>Gesamt-Zeit bis Abruf-Ende</Pre>
+            <Zeiten z={ calculator.zusammenfassung.zeitGesamt }/>
+        </Line>
+        <Line>
+            <Pre>- davon Feiertage/WE</Pre>
+            <Zeiten z={ calculator.zusammenfassung.zeitFeierOderWE }/>
+        </Line>
+        <Line>
+            <Pre>- davon Urlaub</Pre>
+            <Zeiten z={ calculator.zusammenfassung.zeitUrlaub }/>
+        </Line>
+        <Hr/>
+        <Line>
+            <Pre>= Zeit zu Arbeiten</Pre>
+            <Zeiten z={ calculator.zusammenfassung.zeitZuArbeiten }/>
+        </Line>
+        <Line>
+            <Pre>- davon abgerufen (RZ+SR)</Pre>
+            <Zeiten z={ calculator.abgerufenZeiten }/>
+        </Line>
+        <Line>
+            <Pre>- davon geplant extern (ISO)</Pre>
+            <Zeiten z={ calculator.zusammenfassung.zeitExternGeplant }/>
+        </Line>
+        <Hr/>
+        <Line>
+            <Pre>= Saldo</Pre>
+            <Zeiten z={ calculator.saldoReststunden }/>
+        </Line>
+    
     </>
+    
 } );

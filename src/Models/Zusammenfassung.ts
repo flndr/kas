@@ -6,6 +6,7 @@ export interface Zusammenfassung {
     zeitFeierOderWE : Zeiten;
     zeitUrlaub : Zeiten;
     zeitZuArbeiten : Zeiten;
+    zeitGearbeitet : Zeiten;
     zeitRemote : Zeiten;
     zeitVorOrtGeplant : Zeiten;
     zeitVorOrtRest : Zeiten;

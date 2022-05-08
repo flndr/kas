@@ -1,66 +1,67 @@
+import { Zeiten }             from 'Models/Zeiten';
+import React                  from 'react';
+import { FC }                 from 'react';
+import { useContext }         from 'react';
+import { createContext }      from 'react';
 import { startOfMonth }       from 'date-fns';
-import { startOfWeek }        from 'date-fns';
-import { isBefore }           from 'date-fns';
 import { isSaturday }         from 'date-fns';
 import { getYear }            from 'date-fns';
-import { parse }              from 'date-fns';
 import { format }             from 'date-fns';
 import { isSunOrHoliday }     from 'feiertagejs';
 import { getHolidays }        from 'feiertagejs';
 import { Region }             from 'feiertagejs';
 import { Holiday }            from 'feiertagejs';
+import { toJS }               from 'mobx';
 import { makeAutoObservable } from 'mobx';
-import { stopPersisting }     from 'mobx-persist-store';
 import { makePersistable }    from 'mobx-persist-store';
-
-import { Arbeitszeit }     from 'Models/Arbeitszeit';
-import { KeinRemoteTyp }   from 'Models/Enum/KeinRemoteTyp';
-import { Wochentag }       from 'Models/Enum/Wochentag';
-import { KeinRemote }      from 'Models/KeinRemote';
-import { Tag }             from 'Models/Tag';
-import { Zeiten }          from 'Models/Zeiten';
-import { Zusammenfassung } from 'Models/Zusammenfassung';
-import React               from 'react';
-import { FC }              from 'react';
-import { useContext }      from 'react';
-import { createContext }   from 'react';
+import { stopPersisting }     from 'mobx-persist-store';
+import { Arbeitszeit }        from 'Models/Arbeitszeit';
+import { TerminTyp }          from 'Models/Enum/TerminTyp';
+import { Wochentag }          from 'Models/Enum/Wochentag';
+import { Tag }                from 'Models/Tag';
+import { TerminStore }        from 'Models/TerminStore';
+import { TerminTagweise }     from 'Models/TerminTagweise';
+import { Zusammenfassung }    from 'Models/Zusammenfassung';
+import { toString }           from 'Util/date';
+import { dateToString }       from 'Util/date';
+import { stringToDate }       from 'Util/date';
+import { toNumber }           from 'Util/toNumber';
 
 export class CalculatorStore {
-    
-    static readonly dateFormat : string = 'yyyy-MM-dd';
     
     readonly region : Region = 'BY';
     readonly holidays : Holiday[];
     
-    _arbeitszeiten : Arbeitszeit = {
-        [ Wochentag.Montag ]     : 8,
-        [ Wochentag.Dienstag ]   : 8,
-        [ Wochentag.Mittwoch ]   : 8,
-        [ Wochentag.Donnerstag ] : 8,
-        [ Wochentag.Freitag ]    : 8,
-    }
+    _termine : TerminStore[] = [];
     
-    _keinRemote : KeinRemote[] = [];
-    _reststundenRZ : number    = 580;
+    _reststundenRZ : number   = 580;
     _reststundenSZ : number    = 300;
     _ersterTagAbruf : string   = '2022-05-01';
     _letzterTagAbruf : string  = '2022-10-31';
     
+    _arbeitszeiten : Arbeitszeit = {
+        [ Wochentag.Montag ]     : 8.25,
+        [ Wochentag.Dienstag ]   : 8.25,
+        [ Wochentag.Mittwoch ]   : 8.25,
+        [ Wochentag.Donnerstag ] : 8.25,
+        [ Wochentag.Freitag ]    : 8.25,
+    };
+    
     constructor() {
         makeAutoObservable( this );
-        //
-        //makePersistable( this, {
-        //    name       : 'CalculatorStore',
-        //    storage    : window.localStorage,
-        //    properties : [
-        //        '_arbeitszeiten',
-        //        '_keinRemote',
-        //        '_ersterTagAbruf',
-        //        '_letzterTagAbruf',
-        //        '_reststundenRZ',
-        //        '_reststundenSZ',
-        //    ]
-        //} );
+        
+        makePersistable( this, {
+            name       : 'CalculatorStore',
+            storage    : window.localStorage,
+            properties : [
+                '_arbeitszeiten',
+                '_termine',
+                '_ersterTagAbruf',
+                '_letzterTagAbruf',
+                '_reststundenRZ',
+                '_reststundenSZ',
+            ]
+        } );
         
         const currentYear = getYear( new Date() );
         this.holidays     = [
@@ -74,16 +75,63 @@ export class CalculatorStore {
         stopPersisting( this );
     }
     
-    get keinRemote() : KeinRemote[] {
-        return this._keinRemote;
-    }
-    
     get letzterTagAbruf() : Date {
-        return CalculatorStore.stringToDate( this._letzterTagAbruf );
+        return stringToDate( this._letzterTagAbruf );
     }
     
     get ersterTagAbruf() : Date {
-        return CalculatorStore.stringToDate( this._ersterTagAbruf );
+        return stringToDate( this._ersterTagAbruf );
+    }
+    
+    get abrufZeitenGesamt() : Zeiten {
+        return {
+            tage    : ( this.reststundenRZ + this.reststundenSZ ) / this.durchschnittleicheArbeitszeitProTag,
+            stunden : ( this.reststundenRZ + this.reststundenSZ )
+        };
+    }
+    
+    get saldoReststunden() : Zeiten {
+        return {
+            tage    : this.zusammenfassung.zeitZuArbeiten.tage
+                      - this.abgerufenZeiten.tage
+                      - this.zusammenfassung.zeitExternGeplant.tage,
+            stunden : this.zusammenfassung.zeitZuArbeiten.stunden
+                      - this.abgerufenZeiten.stunden
+                      - this.zusammenfassung.zeitExternGeplant.stunden
+        }
+    }
+    
+    get saldoAbruf() : Zeiten {
+        return {
+            tage    : this.abrufZeitenGesamt.tage
+                      - this.zusammenfassung.zeitVorOrtGeplant.tage
+                      - this.zusammenfassung.zeitVorOrtRest.tage
+                      - this.zusammenfassung.zeitRemote.tage,
+            stunden : this.abrufZeitenGesamt.stunden
+                      - this.zusammenfassung.zeitVorOrtGeplant.stunden
+                      - this.zusammenfassung.zeitVorOrtRest.stunden
+                      - this.zusammenfassung.zeitRemote.stunden,
+        }
+    }
+    
+    get abgerufenZeiten() : Zeiten {
+        return {
+            tage    : this.zusammenfassung.zeitVorOrtGeplant.tage
+                      + this.zusammenfassung.zeitVorOrtRest.tage
+                      + this.zusammenfassung.zeitRemote.tage,
+            stunden : this.zusammenfassung.zeitVorOrtGeplant.stunden
+                      + this.zusammenfassung.zeitVorOrtRest.stunden
+                      + this.zusammenfassung.zeitRemote.stunden,
+        }
+    }
+    
+    get abgerufenRestZeiten() : Zeiten {
+        return {
+            tage    : this.zusammenfassung.zeitVorOrtRest.tage
+                      + this.zusammenfassung.zeitRemote.tage,
+            stunden : this.zusammenfassung.zeitVorOrtRest.stunden
+                      + this.zusammenfassung.zeitRemote.stunden,
+        }
     }
     
     get durchschnittleicheArbeitszeitProWoche() : number {
@@ -98,7 +146,7 @@ export class CalculatorStore {
     
     private forEachDay( callback : ( date : Date, dateString : string ) => void ) {
         for ( const d = new Date( this.ersterTagAbruf.getTime() ); d <= this.letzterTagAbruf; d.setDate( d.getDate() + 1 ) ) {
-            callback( d, CalculatorStore.dateToString( d ) );
+            callback( d, dateToString( d ) );
         }
     }
     
@@ -107,25 +155,10 @@ export class CalculatorStore {
     }
     
     setArbeitszeit( w : Wochentag, value : number | string ) {
-        let zeit;
-        if ( typeof value === 'string' ) {
-            zeit = parseFloat( value );
-        } else {
-            zeit = value;
-        }
-        
         this._arbeitszeiten = {
             ...this._arbeitszeiten,
-            [ w ] : zeit
+            [ w ] : toNumber( value )
         }
-    }
-    
-    static dateToString( date : Date ) : string {
-        return format( date, CalculatorStore.dateFormat );
-    }
-    
-    static stringToDate( date : string ) : Date {
-        return parse( date, CalculatorStore.dateFormat, new Date() );
     }
     
     get reststundenRZ() : number {
@@ -137,30 +170,22 @@ export class CalculatorStore {
     }
     
     setReststundenRZ( value : string | number ) {
-        if ( typeof value === 'string' ) {
-            this._reststundenRZ = parseFloat( value );
-        } else {
-            this._reststundenRZ = value;
-        }
+        this._reststundenRZ = toNumber( value );
     }
     
     setReststundenSZ( value : string | number ) {
-        if ( typeof value === 'string' ) {
-            this._reststundenSZ = parseFloat( value );
-        } else {
-            this._reststundenSZ = value;
-        }
+        this._reststundenSZ = toNumber( value );
     }
     
     setLetzterTagAbruf( date : Date | null ) {
         if ( date ) {
-            this._letzterTagAbruf = CalculatorStore.dateToString( date );
+            this._letzterTagAbruf = dateToString( date );
         }
     }
     
     setErsterTagAbruf( date : Date | null ) {
         if ( date ) {
-            this._ersterTagAbruf = CalculatorStore.dateToString( date );
+            this._ersterTagAbruf = dateToString( date );
         }
     }
     
@@ -169,24 +194,29 @@ export class CalculatorStore {
     }
     
     istUrlaubstag( dateString : string ) : boolean {
-        if ( this.istFeiertagOderWE( CalculatorStore.stringToDate( dateString ) ) ) {
+        if ( this.istFeiertagOderWE( stringToDate( dateString ) ) ) {
             return false;
         }
-        return !!this._keinRemote.find( a => a.dateString === dateString );
+        return this.termine.filter( t => t.dateString === dateString && t.typ === TerminTyp.URLAUB ).length > 0;
     }
     
-    getStundenAbwesend( dateString : string ) : number {
-        const keinRemote = this._keinRemote.find( a => a.dateString === dateString );
-        
-        if ( !keinRemote ) {
-            return 0;
-        }
-        
-        if ( keinRemote.ganzerTag ) {
-            return this.getStundenProTag( CalculatorStore.stringToDate( dateString ) );
-        }
-        
-        return keinRemote.stundenAbwesend || 0;
+    istVorOrtTag( dateString : string ) : boolean {
+        return this.termine.filter( t => t.dateString === dateString && t.typ === TerminTyp.VORORT ).length > 0;
+    }
+    
+    istExternGanztaegig( dateString : string ) : boolean {
+        return this.termine.filter( t =>
+            t.dateString === dateString &&
+            t.typ === TerminTyp.EXTERN &&
+            t.stunden === undefined
+        ).length > 0;
+    }
+    
+    getGeplanteExternStunden( dateString : string ) : number {
+        return this.termine
+                   .filter( t => t.dateString === dateString && t.typ === TerminTyp.EXTERN )
+                   .map( t => t.stunden || 0 )
+                   .reduce( ( prev, curr ) => prev + curr, 0 );
     }
     
     getStundenProTag( date : Date ) : number {
@@ -197,7 +227,7 @@ export class CalculatorStore {
     get monate() : string[] {
         const m : string[] = [];
         this.forEachDay( ( date ) => {
-            const firstOfMonthString = CalculatorStore.dateToString( startOfMonth( date ) );
+            const firstOfMonthString = dateToString( startOfMonth( date ) );
             if ( !m.includes( firstOfMonthString ) ) {
                 m.push( firstOfMonthString );
             }
@@ -214,6 +244,7 @@ export class CalculatorStore {
             zeitFeierOderWE   : { stunden : 0, tage : 0 },
             zeitUrlaub        : { stunden : 0, tage : 0 },
             zeitZuArbeiten    : { stunden : 0, tage : 0 },
+            zeitGearbeitet    : { stunden : 0, tage : 0 },
             zeitExternGeplant : { stunden : 0, tage : 0 },
             zeitExternRest    : { stunden : 0, tage : 0 },
             zeitRemote        : { stunden : 0, tage : 0 },
@@ -224,27 +255,27 @@ export class CalculatorStore {
             tage              : []
         };
         
-        let stundenRzVoll = false;
-        let stundenRz     = 0;
-        let stundenSzVoll = false;
-        let stundenSz     = 0;
+        let tage : Tag[] = [];
         
         this.forEachDay( ( date : Date, dateString : string ) => {
             
             const istFeiertagOderWE       = this.istFeiertagOderWE( date );
             const istUrlaubstag           = this.istUrlaubstag( dateString );
+            const istExternGanztaegig     = this.istExternGanztaegig( dateString );
+            const istVorOrtTagGeplant     = this.istVorOrtTag( dateString );
             const istArbeitstag           = !( istUrlaubstag || istFeiertagOderWE );
             const stundenZuArbeitenCustom = this.getStundenProTag( date );
             
-            zusammenfassung.zeitGesamt.stunden += arbeitsZeitProTag;
-            
-            if ( istFeiertagOderWE ) {
-                zusammenfassung.zeitFeierOderWE.stunden += arbeitsZeitProTag;
-            }
-            
-            if ( istUrlaubstag ) {
-                zusammenfassung.zeitUrlaub.stunden += arbeitsZeitProTag;
-            }
+            //if ( dateString === '2022-05-16' ) {
+            //    console.log( dateString, {
+            //        istFeiertagOderWE,
+            //        istUrlaubstag,
+            //        istExternGanztaegig,
+            //        istVorOrtTagGeplant,
+            //        istArbeitstag,
+            //        stundenZuArbeitenCustom,
+            //    } )
+            //}
             
             const tag : Tag = {
                 date,
@@ -252,6 +283,7 @@ export class CalculatorStore {
                 istArbeitstag,
                 istFeiertagOderWE,
                 istUrlaubstag,
+                istExternGanztaegig,
                 istLetzterTagRZ      : false,
                 istLetzterTagSZ      : false,
                 stundenExternGeplant : 0,
@@ -259,52 +291,155 @@ export class CalculatorStore {
                 stundenRemote        : 0,
                 stundenVorOrtGeplant : 0,
                 stundenVorOrtRest    : 0,
-                stundenUrlaub        : istUrlaubstag ? arbeitsZeitProTag : 0,
-                stundenZuArbeiten    : istArbeitstag ? arbeitsZeitProTag : 0,
-                stundenGearbeitet    : istArbeitstag ? stundenZuArbeitenCustom : 0,
+                stundenUrlaub        : 0,
+                stundenZuArbeiten    : arbeitsZeitProTag,
+                stundenGearbeitet    : stundenZuArbeitenCustom,
             };
             
-            if ( istArbeitstag ) {
-                
-                zusammenfassung.zeitZuArbeiten.stunden += arbeitsZeitProTag
-                
-                tag.stundenUrlaub = 0;
-                
-                if ( stundenRzVoll && stundenSzVoll ) {
-                    tag.stundenExternGeplant = tag.stundenGearbeitet;
-                    zusammenfassung.zeitExternRest.stunden += tag.stundenGearbeitet;
-                } else if ( stundenRzVoll ) {
-                    stundenSz += tag.stundenGearbeitet;
-                    tag.stundenVorOrtRest = tag.stundenGearbeitet;
-                    zusammenfassung.zeitVorOrtRest.stunden += tag.stundenGearbeitet;
+            if ( istFeiertagOderWE ) {
+                tag.stundenZuArbeiten = 0;
+                tag.stundenGearbeitet = 0;
+            } else if ( istUrlaubstag ) {
+                tag.stundenZuArbeiten = 0;
+                tag.stundenGearbeitet = 0;
+                tag.stundenUrlaub     = arbeitsZeitProTag;
+            } else if ( istExternGanztaegig ) {
+                tag.stundenExternGeplant = stundenZuArbeitenCustom;
+            } else { // RZ oder SZ
+                if ( istVorOrtTagGeplant ) {
+                    tag.stundenExternGeplant = this.getGeplanteExternStunden( dateString );
+                    tag.stundenVorOrtGeplant = stundenZuArbeitenCustom - tag.stundenExternGeplant;
                 } else {
-                    stundenRz += tag.stundenGearbeitet;
-                    tag.stundenRemote = tag.stundenGearbeitet;
-                    zusammenfassung.zeitRemote.stunden += tag.stundenGearbeitet;
+                    tag.stundenExternGeplant = this.getGeplanteExternStunden( dateString );
+                    tag.stundenRemote        = stundenZuArbeitenCustom - tag.stundenExternGeplant;
                 }
-                
-                if ( !stundenRzVoll && !stundenSzVoll && this._reststundenRZ <= ( stundenRz + tag.stundenGearbeitet ) ) {
-                    stundenRzVoll         = true;
-                    tag.istLetzterTagRZ   = true;
-                    tag.stundenRemote     = this._reststundenRZ - stundenRz;
-                    tag.stundenVorOrtRest = tag.stundenGearbeitet - tag.stundenRemote;
-                }
-                
-                if ( stundenRzVoll && !stundenSzVoll && this._reststundenSZ <= ( stundenSz + tag.stundenGearbeitet ) ) {
-                    stundenSzVoll            = true;
-                    tag.istLetzterTagSZ      = true;
-                    tag.stundenVorOrtRest    = this._reststundenSZ - stundenSz;
-                    tag.stundenExternGeplant = tag.stundenGearbeitet - tag.stundenVorOrtRest;
-                }
-                
             }
-            zusammenfassung.tage.push( tag );
+            
+            tage.push( tag );
         } );
         
+        // limit RZ
+        let stundenRzVerfuegbar = 1 + this._reststundenRZ - 1;
+        let stundenRzVoll       = false;
+        
+        tage = tage.map( tag => {
+            if ( !tag.istFeiertagOderWE &&
+                 !tag.istUrlaubstag &&
+                 !tag.istExternGanztaegig ) {
+                
+                if ( stundenRzVerfuegbar >= tag.stundenRemote ) {
+                    stundenRzVerfuegbar = stundenRzVerfuegbar - tag.stundenRemote;
+                } else {
+                    if ( !stundenRzVoll ) {
+                        stundenRzVoll         = true;
+                        tag.stundenRemote     = stundenRzVerfuegbar;
+                        tag.stundenVorOrtRest = tag.stundenGearbeitet - tag.stundenRemote;
+                        tag.istLetzterTagRZ   = true;
+                        stundenRzVerfuegbar   = 0;
+                    } else {
+                        tag.stundenVorOrtRest = tag.stundenRemote;
+                        tag.stundenRemote     = 0;
+                    }
+                }
+            }
+            return tag;
+        } );
+        
+        // limit SZ
+        const stundenVorOrtVerplant = tage.map( t => t.stundenVorOrtGeplant ).reduce( ( prev, cur ) => prev + cur, 0 );
+        const stundenVorOrtRest     = tage.map( t => t.stundenVorOrtRest ).reduce( ( prev, cur ) => prev + cur, 0 );
+        
+        let stundenSzVerfuegbar = 1 + this._reststundenSZ - 1 - stundenVorOrtVerplant;
+        let stundenSzVoll       = false;
+        
+        console.log( '----' );
+        console.log( 'this._reststundenSZ', this._reststundenSZ );
+        console.log( 'stundenVorOrtVerplant', stundenVorOrtVerplant );
+        console.log( 'stundenSzVerfuegbar', stundenSzVerfuegbar );
+        
+        tage = tage.map( tag => {
+            if ( !tag.istFeiertagOderWE &&
+                 !tag.istUrlaubstag &&
+                 !tag.istExternGanztaegig ) {
+                
+                if ( stundenSzVerfuegbar >= tag.stundenVorOrtRest ) {
+                    stundenSzVerfuegbar = stundenSzVerfuegbar - tag.stundenVorOrtRest;
+                } else {
+                    if ( !stundenSzVoll ) {
+                        stundenSzVoll         = true;
+                        tag.stundenVorOrtRest = stundenSzVerfuegbar;
+                        tag.stundenExternRest = tag.stundenGearbeitet - tag.stundenVorOrtRest;
+                        tag.istLetzterTagSZ   = true;
+                        stundenSzVerfuegbar   = 0;
+                    } else {
+                        tag.stundenExternRest = tag.stundenVorOrtRest;
+                        tag.stundenVorOrtRest = 0;
+                    }
+                }
+            }
+            return tag;
+        } );
+        
+        console.log( '-' );
+        console.log( 'this._reststundenSZ', this._reststundenSZ );
+        console.log( 'stundenVorOrtVerplant', stundenVorOrtVerplant );
+        console.log( 'stundenSzVerfuegbar', stundenSzVerfuegbar );
+        
+        //// limit ST
+        //let stundenSzGebucht = 0;
+        //let stundenSzVoll    = false;
+        //
+        //tage = tage.map( tag => {
+        //    if ( !tag.istFeiertagOderWE &&
+        //         !tag.istUrlaubstag &&
+        //         !tag.istExternGanztaegig ) {
+        //
+        //        const stundenVorOrt = tag.stundenVorOrtGeplant + tag.stundenVorOrtRest;
+        //
+        //        if ( stundenSzVoll ) {
+        //            tag.stundenExternRest    = stundenVorOrt;
+        //            tag.stundenVorOrtGeplant = 0;
+        //            tag.stundenVorOrtRest    = 0;
+        //        } else {
+        //            const istKontingentVornanden = this._reststundenSZ >= stundenSzGebucht + stundenVorOrt;
+        //            if ( istKontingentVornanden ) {
+        //                stundenSzGebucht += stundenVorOrt;
+        //            } else {
+        //                stundenSzVoll         = true;
+        //                const rest            = this._reststundenSZ - stundenSzGebucht;
+        //                tag.stundenVorOrtRest = stundenSzGebucht - rest;
+        //                tag.stundenExternRest = rest;
+        //                tag.istLetzterTagSZ   = true;
+        //            }
+        //        }
+        //    }
+        //    return tag;
+        // } );
+        
+        tage.forEach( tag => {
+            console.log( tag.dateString );
+            zusammenfassung.zeitGesamt.stunden += arbeitsZeitProTag;
+            if ( tag.istFeiertagOderWE ) {
+                zusammenfassung.zeitFeierOderWE.stunden += arbeitsZeitProTag;
+            } else if ( tag.istUrlaubstag ) {
+                zusammenfassung.zeitUrlaub.stunden += arbeitsZeitProTag;
+            } else {
+                zusammenfassung.zeitZuArbeiten.stunden += tag.stundenZuArbeiten;
+                zusammenfassung.zeitGearbeitet.stunden += tag.stundenGearbeitet;
+                zusammenfassung.zeitExternGeplant.stunden += tag.stundenExternGeplant;
+                zusammenfassung.zeitExternRest.stunden += tag.stundenExternRest;
+                zusammenfassung.zeitRemote.stunden += tag.stundenRemote;
+                zusammenfassung.zeitVorOrtGeplant.stunden += tag.stundenVorOrtGeplant;
+                zusammenfassung.zeitVorOrtRest.stunden += tag.stundenVorOrtRest;
+            }
+        } );
+        
+        zusammenfassung.tage                   = tage;
         zusammenfassung.zeitGesamt.tage        = zusammenfassung.zeitGesamt.stunden / arbeitsZeitProTag;
         zusammenfassung.zeitFeierOderWE.tage   = zusammenfassung.zeitFeierOderWE.stunden / arbeitsZeitProTag;
         zusammenfassung.zeitUrlaub.tage        = zusammenfassung.zeitUrlaub.stunden / arbeitsZeitProTag;
         zusammenfassung.zeitZuArbeiten.tage    = zusammenfassung.zeitZuArbeiten.stunden / arbeitsZeitProTag;
+        zusammenfassung.zeitGearbeitet.tage    = zusammenfassung.zeitGearbeitet.stunden / arbeitsZeitProTag;
         zusammenfassung.zeitExternGeplant.tage = zusammenfassung.zeitExternGeplant.stunden / arbeitsZeitProTag;
         zusammenfassung.zeitExternRest.tage    = zusammenfassung.zeitExternRest.stunden / arbeitsZeitProTag;
         zusammenfassung.zeitRemote.tage        = zusammenfassung.zeitRemote.stunden / arbeitsZeitProTag;
@@ -314,41 +449,108 @@ export class CalculatorStore {
         return zusammenfassung;
     }
     
-    private createKeinRemote( date : Date ) : KeinRemote {
-        return {
-            dateString : CalculatorStore.dateToString( date ),
-            ganzerTag  : true,
-            typ        : KeinRemoteTyp.ABWESEND,
-        }
+    //
+    //private addAndRemoveDuplicateRemotes( termin : GeplanterTermin ) {
+    //    let oldRemotes = this._geplanteAbwesenheiten;
+    //
+    //    newRemotes.forEach( n => {
+    //        oldRemotes = oldRemotes.filter( r => r.dateString !== n.dateString );
+    //    } );
+    //
+    //    return [
+    //        ...oldRemotes,
+    //        ...newRemotes
+    //    ];
+    //}
+    //
+    addTermin( typ : TerminTyp, start : Date | string, end ? : Date | string | null ) {
+        
+        const termin : TerminStore = {
+            typ,
+            dateStringStart : start instanceof Date ? dateToString( start ) : start,
+            dateStringEnde  : end ? ( end instanceof Date ? dateToString( end ) : end ) : undefined
+        };
+        
+        this._termine = [
+            ...this._termine,
+            termin
+        ];
+        
     }
     
-    private addAndRemoveDuplicateRemotes( newRemotes : KeinRemote[] ) {
-        let oldRemotes = this._keinRemote;
+    get termine() : TerminTagweise[] {
+        const termine : TerminTagweise[] = [];
         
-        newRemotes.forEach( n => {
-            oldRemotes = oldRemotes.filter( r => r.dateString !== n.dateString );
+        this._termine.forEach( t => {
+            if ( !t.dateStringEnde ) {
+                
+                if ( !t.repeat ) {
+                    termine.push( {
+                        typ        : t.typ,
+                        dateString : t.dateStringStart,
+                        stunden    : t.stunden || undefined
+                    } );
+                } else {
+                    const wochentag = format( stringToDate( t.dateStringStart ), 'EEEE' );
+                    this.forEachDay( ( date, dateString ) => {
+                        if ( wochentag === format( date, 'EEEE' ) ) {
+                            termine.push( {
+                                typ        : t.typ,
+                                dateString : dateString,
+                                stunden    : t.stunden || undefined
+                            } );
+                        }
+                    } );
+                }
+                
+            } else {
+                for ( const d = stringToDate( t.dateStringStart );
+                      d <= stringToDate( t.dateStringEnde );
+                      d.setDate( d.getDate() + 1 ) ) {
+                    termine.push( {
+                        typ        : t.typ,
+                        dateString : dateToString( d ),
+                        stunden    : t.stunden || undefined
+                    } );
+                }
+            }
         } );
         
-        return [
-            ...oldRemotes,
-            ...newRemotes
-        ];
+        return termine;
     }
     
-    addKeinRemote( start : Date, end ? : Date | null ) {
-        const kr : KeinRemote[] = [];
-        if ( !end ) {
-            kr.push( this.createKeinRemote( start ) );
-        } else {
-            for ( const d = start; d <= end; d.setDate( d.getDate() + 1 ) ) {
-                kr.push( this.createKeinRemote( d ) );
-            }
+    removeTermin( typ : TerminTyp, start : Date | string ) {
+        const dateStringStart = toString( start );
+        
+        console.log( 'removeTermin', typ, dateStringStart, toJS( this._termine ) );
+        
+        this._termine = toJS( this._termine ).filter( a => {
+            return !( a.dateStringStart === dateStringStart && a.typ === typ )
+        } );
+    }
+    
+    updateTermin( typ : TerminTyp, start : Date | string, terminUpdate : Partial<TerminStore> ) {
+        const dateStringStart = toString( start );
+        
+        const terminOld = toJS( this._termine )
+        .find( a => a.dateStringStart === dateStringStart && a.typ === typ );
+        
+        if ( terminOld ) {
+            const terminNeu = {
+                ...terminOld,
+                ...terminUpdate
+            };
+            
+            //if(terminNeu.typ !== TerminTyp.EXTERN) {
+            //    terminNeu.stunden = undefined;
+            //}
+            
+            this.removeTermin( terminOld.typ, terminOld.dateStringStart );
+            this._termine = [
+                ...this._termine,
+                terminNeu
+            ];
         }
-        this._keinRemote = this.addAndRemoveDuplicateRemotes( kr );
-    }
-    
-    removeKeinRemote( dateString : string ) {
-        this._keinRemote = this._keinRemote.filter( r => r.dateString !== dateString );
     }
     
 }

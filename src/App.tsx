@@ -1,6 +1,6 @@
 import styled                   from '@emotion/styled';
 import { Abruf }                from 'Components/Abruf';
-import { Abwesenheiten }        from 'Components/Abwesenheiten';
+import { Termine }              from 'Components/Termine';
 import { Zusammenfassung }      from 'Components/Zusammenfassung';
 import { startOfMonth }         from 'date-fns';
 import { useEffect }            from 'react';
@@ -56,6 +56,24 @@ const Right = styled( Column )`
   padding : 2rem;
 `;
 
+const TopLayout = styled.div`
+  display         : flex;
+  flex-wrap       : nowrap;
+  justify-content : stretch;
+  align-items     : stretch;
+`;
+
+const TopCol  = styled.div`
+`;
+const TopLeft = styled( TopCol )`
+  padding-right : 2rem;
+  width         : 50%;
+`;
+
+const TopRight = styled( TopCol )`
+  width : 50%;
+`;
+
 function App() {
     
     const calculator = useCalculatorStore();
@@ -63,7 +81,6 @@ function App() {
     useEffect( () => {
         return () => calculator.stopStore();
     }, [] );
-    
     
     return <>
         <CalculatorStoreProvider store={ calculator }>
@@ -74,9 +91,17 @@ function App() {
                     
                     <Divider/>
                     
-                    <h4>Zusammenfassung</h4>
+                    <TopLayout>
+                        <TopLeft>
+                           
+                            <Zusammenfassung/>
+                        </TopLeft>
+                        <TopRight>
+                            <h4>Termine & Urlaub</h4>
+                            <Termine/>
+                        </TopRight>
+                    </TopLayout>
                     
-                    <Zusammenfassung/>
                     
                     <Divider/>
                     
@@ -93,6 +118,12 @@ function App() {
                         keine Über- oder Minusstunden machst.</p>
                     <p>Dein Remote-Kontingent (RZ) wird daher immer vor deinem Vor-Ort-Kontingent (SZ) verbaucht.</p>
                     <p>Sind alle Kontingente (RZ+SZ) ausgeschöpft wird auf extern (ISO) verbucht.</p>
+                    <p>Limitierungen</p>
+                    <ul>
+                        <li>Vor-Ort-Tage sind immer ganze Tage</li>
+                        <li>Wochenenden werden ignoriert</li>
+                        <li>Externe Zeiten könnten nur 1-wöchentlich wiederholt werden</li>
+                    </ul>
                 
                 </Left>
                 
@@ -102,14 +133,10 @@ function App() {
                     <Abruf/>
                     <Divider/>
                     
-                    <h4>Abwesenheiten</h4>
-                    <Abwesenheiten/>
-                    <Divider/>
-    
                     <h4>Arbeitszeiten</h4>
                     <Arbeitszeiten/>
                     <Divider/>
-                    
+                
                 
                 </Right>
             </Layout>

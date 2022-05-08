@@ -1,1 +1,3 @@
-export const twoDigit = ( value : number ) : string => value.toFixed( 2 );
+export const twoDigit = ( value : number ) : string => {
+    return /*( 0 > value ? '-' : '' ) +*/ value.toFixed( 2 );
+}
