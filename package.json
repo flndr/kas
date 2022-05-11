@@ -27,8 +27,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "npm run less && react-scripts start",
+    "build": "npm run less && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "less": "lessc src/rsuite.less src/rsuite.css"

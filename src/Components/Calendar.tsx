@@ -47,7 +47,7 @@ const NoWorkingDay = styled( Cell )`
   text-decoration : line-through;
 `;
 
-const Month = styled( Cell )`
+const Month = styled.div`
   color : var(--rs-text-primary);
 `;
 

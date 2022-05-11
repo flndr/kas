@@ -71,13 +71,13 @@ export const TimeBar = observer( ( props : TimeBarProps ) => {
     
     if ( tag.istUrlaubstag ) {
         return <Container showDigits={ showDigits }>
-            <FreiBar percent={ 100 }>{ twoDigit( tag.stundenUrlaub ) }</FreiBar>
+            <FreiBar percent={ 100 }><span>{ twoDigit( tag.stundenUrlaub ) }</span></FreiBar>
         </Container>;
     }
     
     if ( tag.istExternGanztaegig ) {
         return <Container showDigits={ showDigits }>
-            <IsoBar percent={ 100 }>{ twoDigit( tag.stundenExternGeplant ) }</IsoBar>
+            <IsoBar percent={ 100 }><span>{ twoDigit( tag.stundenExternGeplant ) }</span></IsoBar>
         </Container>;
     }
     

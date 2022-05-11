@@ -26,11 +26,11 @@ const Calendars = styled.div`
   flex-wrap       : wrap;
   justify-content : stretch;
   align-items     : flex-start;
-  margin          : -1.5rem;
+  margin          : 0 -1rem;
 
   & > div {
     width   : 50%;
-    padding : 1.5rem;
+    padding : 1rem;
   }
 `;
 
