@@ -1,18 +1,12 @@
-import styled        from '@emotion/styled';
-import { Color }     from 'Color';
-import { TerminTyp } from 'Models/Enum/TerminTyp';
-import React         from 'react';
-import { observer }  from 'mobx-react';
-
-import { Tag }      from 'Models/Tag';
-import { COLOR }    from 'rsuite/utils';
+import React        from 'react';
+import styled       from '@emotion/styled';
+import { observer } from 'mobx-react';
 import { twoDigit } from 'Util/twoDigit';
+import { Tag }      from 'Models/Tag';
+import { BREAK }    from 'Styles/media';
+import { Color }    from 'Color';
 
-interface ContainerProps {
-    showDigits : boolean;
-}
-
-const Container = styled.div<ContainerProps>`
+const Container = styled.div`
   display         : flex;
   flex-wrap       : nowrap;
   justify-content : stretch;
@@ -22,13 +16,25 @@ const Container = styled.div<ContainerProps>`
   overflow        : hidden;
 
   & > div {
-    min-width  : ${ p => p.showDigits ? 28 : 6 }px;
-    min-height : ${ p => p.showDigits ? 15 : 6 }px;
+    min-width  : 6px;
+    min-height : 6px;
   }
 
   & > div > span {
-    display : ${ p => p.showDigits ? 'block' : 'none' };
+    display : none;
   }
+
+  ${ BREAK.S } {
+    & > div {
+      min-width  : 28px;
+      min-height : 15px;
+    }
+
+    & > div > span {
+      display : block;
+    }
+  }
+
 `
 
 interface ChildProps {
@@ -66,17 +72,16 @@ interface TimeBarProps {
 
 export const TimeBar = observer( ( props : TimeBarProps ) => {
     
-    const tag        = props.tag;
-    const showDigits = true;
+    const tag = props.tag;
     
     if ( tag.istUrlaubstag ) {
-        return <Container showDigits={ showDigits }>
+        return <Container>
             <FreiBar percent={ 100 }><span>{ twoDigit( tag.stundenUrlaub ) }</span></FreiBar>
         </Container>;
     }
     
     if ( tag.istExternGanztaegig ) {
-        return <Container showDigits={ showDigits }>
+        return <Container>
             <IsoBar percent={ 100 }><span>{ twoDigit( tag.stundenExternGeplant ) }</span></IsoBar>
         </Container>;
     }
@@ -87,13 +92,7 @@ export const TimeBar = observer( ( props : TimeBarProps ) => {
     let sz  = tag.stundenVorOrtRest + tag.stundenVorOrtGeplant;
     let iso = tag.stundenExternGeplant + tag.stundenExternRest;
     
-    if ( tag.dateString === '2022-05-20' ) {
-        console.log( tag.dateString, {
-            rz, sz, iso
-        } )
-    }
-    
-    return <Container showDigits={ showDigits }>
+    return <Container>
         <RzBar percent={ p( rz ) }><span>{ twoDigit( rz ) }</span></RzBar>
         <SzBar percent={ p( sz ) }><span>{ twoDigit( sz ) }</span></SzBar>
         <IsoBar percent={ p( iso ) }><span>{ twoDigit( iso ) }</span></IsoBar>

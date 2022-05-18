@@ -9,7 +9,7 @@ import { twoDigit }           from 'Util/twoDigit';
 
 const Zeile = styled.div`
   display         : flex;
-  justify-content : flex-start;
+  justify-content : space-between;
   align-items     : center;
 
   & + & {
@@ -37,14 +37,13 @@ export const Arbeitszeiten = observer( () => {
     
     const calculator = useCalculatorStore();
     
-    return <>
+    return <div>
         { Object.keys( Wochentag ).map( w => {
             const key = w as keyof typeof Wochentag;
             return <Zeile key={ w }>
                 <Label>{ w }</Label>
                 <InputNumberStyled
                     buttonAppearance={ 'subtle' }
-                    size={ 'sm' }
                     step={ 0.25 }
                     value={ twoDigit(calculator.getArbeitszeit( Wochentag[ key ] ) ) }
                     onChange={ value => calculator.setArbeitszeit( Wochentag[ key ], value ) }
@@ -61,5 +60,5 @@ export const Arbeitszeiten = observer( () => {
             <Gesamt>{ calculator.durchschnittleicheArbeitszeitProTag }</Gesamt>
         </Zeile>
     
-    </>
+    </div>
 } );

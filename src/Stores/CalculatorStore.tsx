@@ -1,4 +1,3 @@
-import { Zeiten }             from 'Models/Zeiten';
 import React                  from 'react';
 import { FC }                 from 'react';
 import { useContext }         from 'react';
@@ -15,17 +14,18 @@ import { toJS }               from 'mobx';
 import { makeAutoObservable } from 'mobx';
 import { makePersistable }    from 'mobx-persist-store';
 import { stopPersisting }     from 'mobx-persist-store';
+import { Tag }                from 'Models/Tag';
+import { Zeiten }             from 'Models/Zeiten';
 import { Arbeitszeit }        from 'Models/Arbeitszeit';
 import { TerminTyp }          from 'Models/Enum/TerminTyp';
 import { Wochentag }          from 'Models/Enum/Wochentag';
-import { Tag }                from 'Models/Tag';
 import { TerminStore }        from 'Models/TerminStore';
 import { TerminTagweise }     from 'Models/TerminTagweise';
 import { Zusammenfassung }    from 'Models/Zusammenfassung';
+import { toNumber }           from 'Util/toNumber';
 import { toString }           from 'Util/date';
 import { dateToString }       from 'Util/date';
 import { stringToDate }       from 'Util/date';
-import { toNumber }           from 'Util/toNumber';
 
 export class CalculatorStore {
     
@@ -51,7 +51,7 @@ export class CalculatorStore {
         makeAutoObservable( this );
         
         makePersistable( this, {
-            name       : 'CalculatorStore',
+            name       : 'KAP',
             storage    : window.localStorage,
             properties : [
                 '_arbeitszeiten',
@@ -312,7 +312,6 @@ export class CalculatorStore {
         } );
         
         tage.forEach( tag => {
-            console.log( tag.dateString );
             zusammenfassung.zeitGesamt.stunden += arbeitsZeitProTag;
             if ( tag.istFeiertagOderWE ) {
                 zusammenfassung.zeitFeierOderWE.stunden += arbeitsZeitProTag;

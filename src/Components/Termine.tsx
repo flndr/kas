@@ -2,14 +2,10 @@ import styled                   from '@emotion/styled';
 import CloseIcon                from '@rsuite/icons/Close';
 import { Color }                from 'Color';
 import { observer }             from 'mobx-react';
-import { TerminTyp }            from 'Models/Enum/TerminTyp';
-import { TerminStore }          from 'Models/TerminStore';
-import { TerminTagweise }       from 'Models/TerminTagweise';
 import React                    from 'react';
+import { Divider }              from 'rsuite';
 import { SelectPicker }         from 'rsuite';
 import { Checkbox }             from 'rsuite';
-import { Toggle }               from 'rsuite';
-import { Stack }                from 'rsuite';
 import { DatePickerProps }      from 'rsuite';
 import { DateRangePickerProps } from 'rsuite';
 import { DatePicker }           from 'rsuite';
@@ -17,14 +13,14 @@ import { DateRangePicker }      from 'rsuite';
 import { InputNumber }          from 'rsuite';
 import { IconButton }           from 'rsuite';
 import { DateRange }            from 'rsuite/DateRangePicker';
-
-import { CalculatorStore }    from 'Stores/CalculatorStore';
-import { useCalculatorStore } from 'Stores/CalculatorStore';
-import { toNumber }           from 'Util/toNumber';
-import { twoDigit }           from 'Util/twoDigit';
-
-interface Props {
-}
+import { TerminTyp }            from 'Models/Enum/TerminTyp';
+import { TerminStore }          from 'Models/TerminStore';
+import { ColorDot }             from 'Components/ColorDot';
+import { CalculatorStore }      from 'Stores/CalculatorStore';
+import { useCalculatorStore }   from 'Stores/CalculatorStore';
+import { BREAK }                from 'Styles/media';
+import { toNumber }             from 'Util/toNumber';
+import { twoDigit }             from 'Util/twoDigit';
 
 const InputNumberStyled = styled( InputNumber )`
   & > input {
@@ -32,20 +28,17 @@ const InputNumberStyled = styled( InputNumber )`
   }
 `;
 
-const ColorDot = styled.span<{ color : string }>`
-  display          : block;
-  width            : 10px;
-  height           : 10px;
-  border-radius    : 50%;
-  background-color : ${ p => Color[ p.color ] };
-`;
-
 const ListItem = styled.div`
-  width           : 100%;
-  display         : flex;
-  flex-wrap       : nowrap;
-  justify-content : stretch;
-  align-items     : center;
+  width            : 100%;
+  display          : flex;
+  flex-wrap        : nowrap;
+  justify-content  : stretch;
+  align-items      : center;
+  border-radius    : 8px;
+  border           : 1px solid rgb(255 38 0 / 25%);
+  padding          : 0.5rem 0.75rem;
+  background-color : rgb(255 38 0 / 5%);
+
 
   & + & {
     margin-top : 0.5rem;
@@ -93,6 +86,30 @@ const ColRemove = styled( Col )`
   justify-content : flex-end;
 `;
 
+const AddContainer = styled.div`
+  margin : 0.5rem 0;
+
+  & > div {
+    white-space : nowrap;
+  }
+
+  & > * + * {
+    margin-top : 0.5rem;
+  }
+
+  ${ BREAK.S } {
+    display         : flex;
+    justify-content : space-between;
+    align-items     : center;
+
+    & > * + * {
+      margin-top  : 0;
+      margin-left : 1.5rem;
+    }
+  }
+
+`;
+
 export const Termine = observer( () => {
     
     const calculator : CalculatorStore = useCalculatorStore();
@@ -119,7 +136,8 @@ export const Termine = observer( () => {
         placement       : 'bottomEnd',
         ranges          : [],
         onOk            : handleOk,
-        block           : true
+        block           : true,
+        style           : { width : '100%' }
     };
     
     return <div>
@@ -158,7 +176,7 @@ export const Termine = observer( () => {
             
             return <ListItem key={ [ 'termin', termin.typ, termin.dateStringStart ].join( '-' ) }>
                 <ColDot>
-                    <ColorDot color={ termin.typ }/>
+                    <ColorDot color={ Color[ termin.typ ] }/>
                 </ColDot>
                 <ColTyp>
                     <SelectPicker
@@ -212,18 +230,21 @@ export const Termine = observer( () => {
             </ListItem>
         } ) }
         
-        <Stack spacing={ 6 } style={ { marginTop : '1rem' } }>
+        <Divider/>
+        
+        <AddContainer>
+            <div>Termine hinzufügen:</div>
             <DateRangePicker
                 { ...pickerProps }
                 placeholder={ 'Zeitspanne wählen...' }
             />
+            <div>oder</div>
             <DatePicker
                 { ...pickerProps }
                 disabledDate={ disabledDate }
                 placeholder={ 'Tag wählen...' }
             />
-        </Stack>
-    
+        </AddContainer>
     
     </div>
 } );

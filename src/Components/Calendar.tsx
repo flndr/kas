@@ -11,13 +11,21 @@ import { TimeBar }            from 'Components/TimeBar';
 import { Wochentag }          from 'Models/Enum/Wochentag';
 import { CalculatorStore }    from 'Stores/CalculatorStore';
 import { useCalculatorStore } from 'Stores/CalculatorStore';
+import { BREAK }              from 'Styles/media';
 import { dateToString }       from 'Util/date';
 import { stringToDate }       from 'Util/date';
+
+const Overflow = styled.div`
+  overflow : hidden;
+`;
 
 const Container = styled.div`
   display         : flex;
   flex-wrap       : wrap;
   justify-content : stretch;
+
+    //margin-right    : -${ 100 / 8 * 2.5 }%;
+
 `;
 
 const Cell = styled.div`
@@ -33,7 +41,12 @@ const Cell = styled.div`
   display         : flex;
   justify-content : center;
   align-items     : center;
-  height          : 3rem;
+  height          : 38px;
+
+  ${ BREAK.S } {
+    height : 46px;
+  }
+
 `;
 
 const Day = styled( Cell )`
@@ -47,7 +60,7 @@ const NoWorkingDay = styled( Cell )`
   text-decoration : line-through;
 `;
 
-const Month = styled.div`
+const Month = styled.h4`
   color : var(--rs-text-primary);
 `;
 
@@ -72,7 +85,7 @@ export const Calendar = observer( ( props : Props ) => {
     
     const wochentage = [ ...Object.keys( Wochentag ), 'Samstag', 'Sonntag' ];
     
-    return <div>
+    return <Overflow>
         <Month>{ format( start, 'LLLL', { locale : de } ) }</Month>
         <Container>
             { wochentage.map( t => {
@@ -102,11 +115,11 @@ export const Calendar = observer( ( props : Props ) => {
                 
                 return <Day key={ key }>
                     <div style={ { width : '100%' } }>
-                        { dayString }{ tag.istLetzterTagRZ || tag.istLetzterTagSZ ? ' !!!' : '' }<br/>
+                        { dayString }{ /* tag.istLetzterTagRZ || tag.istLetzterTagSZ ? ' !!!' : '' */ }
                         <TimeBar tag={ tag }/>
                     </div>
                 </Day>
             } ) }
         </Container>
-    </div>
+    </Overflow>
 } );

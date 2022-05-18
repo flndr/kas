@@ -1,77 +1,74 @@
-import styled                   from '@emotion/styled';
-import { Abruf }                from 'Components/Abruf';
-import { Termine }              from 'Components/Termine';
-import { Zusammenfassung }      from 'Components/Zusammenfassung';
-import { startOfMonth }         from 'date-fns';
-import { useEffect }            from 'react';
-import React                    from 'react';
-import { observer }             from 'mobx-react';
-import { Divider }              from 'rsuite';
-import { InputNumber }          from 'rsuite';
-import { Stack }                from 'rsuite';
-import { DatePickerProps }      from 'rsuite';
-import { DateRangePickerProps } from 'rsuite';
-import { DateRangePicker }      from 'rsuite';
-import { DatePicker }           from 'rsuite';
-import { DateRange }            from 'rsuite/DateRangePicker';
-import { CalculatorStore }      from 'Stores/CalculatorStore';
-
+import { useEffect }               from 'react';
+import { observer }                from 'mobx-react';
+import React                       from 'react';
+import { Divider }                 from 'rsuite';
+import styled                      from '@emotion/styled';
+import { Abruf }                   from 'Components/Abruf';
+import { Hinweise }                from 'Components/Hinweise';
+import { SplitLayout }             from 'Components/Shared/SplitLayout';
+import { Stat }                    from 'Components/Shared/Stat';
+import { Termine }                 from 'Components/Termine';
+import { Reststunden }             from 'Components/Zusammenfassung/Reststunden';
+import { Abruf as AbrufZusammen }  from 'Components/Zusammenfassung/Abruf';
 import { useCalculatorStore }      from 'Stores/CalculatorStore';
 import { CalculatorStoreProvider } from 'Stores/CalculatorStore';
 import { Arbeitszeiten }           from 'Components/Arbeitszeiten';
 import { Calendar }                from 'Components/Calendar';
+import { BREAK }                   from 'Styles/media';
+
+const Wrapper = styled.div`
+  padding : 0.5rem;
+
+  ${ BREAK.S } {
+    padding : 1rem;
+  }
+
+  ${ BREAK.XL } {
+    padding : 2rem;
+  }
+
+`;
 
 const Calendars = styled.div`
   display         : flex;
   flex-wrap       : wrap;
   justify-content : stretch;
   align-items     : flex-start;
-  margin          : 0 -1rem;
 
-  & > div {
-    width   : 50%;
-    padding : 1rem;
+  ${ BREAK.L } {
+    margin : 0 -1rem;
+
+    & > div {
+      width   : 50%;
+      padding : 1rem;
+    }
+  }
+
+  ${ BREAK.XL } {
+    & > div {
+      width : 33.33%;
+    }
   }
 `;
 
-const Layout = styled.div`
+const Deins = styled.div`
   display         : flex;
-  justify-content : stretch;
+  justify-content : space-between;
   align-items     : flex-start;
 `;
 
-const Column = styled.div`
-  padding : 2rem;
-
-  & > * + * {
-    margin-top : 1rem;
-  }
+const DeinSetup = styled.div`
+  width       : 16rem;
+  flex-grow   : 0;
+  flex-shrink : 0;
+  
 `;
 
-const Left = styled( Column )`
-  padding : 2rem;
-`;
-
-const Right = styled( Column )`
-  padding : 2rem;
-`;
-
-const TopLayout = styled.div`
-  display         : flex;
-  flex-wrap       : nowrap;
-  justify-content : stretch;
-  align-items     : stretch;
-`;
-
-const TopCol  = styled.div`
-`;
-const TopLeft = styled( TopCol )`
-  padding-right : 2rem;
-  width         : 50%;
-`;
-
-const TopRight = styled( TopCol )`
-  width : 50%;
+const DeineTermine = styled.div`
+  width     : auto;
+  flex-grow : 1;
+  //background-color : #0e8ce6;
+  //--rs-input-bg    : #046ab2;
 `;
 
 function App() {
@@ -84,64 +81,59 @@ function App() {
     
     return <>
         <CalculatorStoreProvider store={ calculator }>
-            <Layout>
-                <Left>
-                    
-                    <h1>KAP*</h1>
-                    
-                    <Divider/>
-                    
-                    <TopLayout>
-                        <TopLeft>
-                           
-                            <Zusammenfassung/>
-                        </TopLeft>
-                        <TopRight>
-                            <h4>Termine & Urlaub</h4>
-                            <Termine/>
-                        </TopRight>
-                    </TopLayout>
-                    
-                    
-                    <Divider/>
-                    
-                    <h4>Kalendermonate ({ calculator.monate.length })</h4>
-                    
-                    <Calendars>
-                        { calculator.monate.map( m => <Calendar key={ 'cal-' + m } start={ m }/> ) }
-                    </Calendars>
-                    
-                    
-                    <Divider/>
-                    <h4>* Hinweise zur Nutzung des KAP - Kunden-Abruf-Planer</h4>
-                    <p>Der Algorithmus geht davon aus, dass du möglichst viel Zeit Remote arbeiten willst und dabei
-                        keine Über- oder Minusstunden machst.</p>
-                    <p>Dein Remote-Kontingent (RZ) wird daher immer vor deinem Vor-Ort-Kontingent (SZ) verbaucht.</p>
-                    <p>Sind alle Kontingente (RZ+SZ) ausgeschöpft wird auf extern (ISO) verbucht.</p>
-                    <p>Limitierungen</p>
-                    <ul>
-                        <li>Vor-Ort-Tage sind immer ganze Tage</li>
-                        <li>Wochenenden werden ignoriert</li>
-                        <li>Externe Zeiten könnten nur 1-wöchentlich wiederholt werden</li>
-                    </ul>
+            
+            <Wrapper>
                 
-                </Left>
+                <h1>KAP*</h1>
                 
-                <Right>
-                    
-                    <h4>Abruf</h4>
-                    <Abruf/>
-                    <Divider/>
-                    
-                    <h4>Arbeitszeiten</h4>
-                    <Arbeitszeiten/>
-                    <Divider/>
+                <Divider/>
+                
+                <Deins>
+                    <DeineTermine>
+                        <h4>Termine & Urlaub</h4>
+                        <Termine/>
+                    </DeineTermine>
+                    <DeinSetup>
+                        <h4>Reststunden</h4>
+                        <Abruf/>
+                        <h4>Arbeitszeiten</h4>
+                        <Arbeitszeiten/>
+                    </DeinSetup>
+                </Deins>
+                
+                <Divider/>
+                
+                <Stat></Stat>
+                
+                <Divider/>
+                
+                <SplitLayout
+                    splitOn={ BREAK.XL }
+                    left={ <div>
+                        <h4>Abruf</h4>
+                        <AbrufZusammen/>
+                    </div> }
+                    right={ <div>
+                        <h4>Reststunden</h4>
+                        <Reststunden/>
+                    </div> }
+                ></SplitLayout>
                 
                 
-                </Right>
-            </Layout>
-        
-        
+                <Divider/>
+                
+                <Calendars>
+                    { calculator.monate.map( m => <Calendar key={ 'cal-' + m } start={ m }/> ) }
+                </Calendars>
+                
+                
+                <Divider/>
+                
+                <h4>* Hinweise zur Nutzung des KAP - Kunden-Abruf-Planer</h4>
+                
+                <Hinweise/>
+            
+            </Wrapper>
         </CalculatorStoreProvider>
     </>;
 }

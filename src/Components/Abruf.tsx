@@ -34,7 +34,7 @@ export const Abruf = observer( () => {
     
     const calculator = useCalculatorStore();
     
-    return <>
+    return <div>
         
         <Zeile>
             <Label>Reststunden RZ</Label>
@@ -82,5 +82,5 @@ export const Abruf = observer( () => {
                 placeholder={ 'Letzter Tag' }/>
         </Zeile>
     
-    </>
+    </div>
 } );
