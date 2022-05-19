@@ -29,3 +29,19 @@ h4 {
     line-height   : 30px;
     margin-bottom : 2rem;
 }
+
+.rs-btn-primary,
+.rs-btn-primary:disabled, .rs-btn-primary.rs-btn-disabled,
+.rs-btn-primary:hover, .rs-btn-primary:focus,
+.rs-picker-select-menu-item.rs-picker-select-menu-item-active,
+.rs-calendar-month-dropdown-cell-active .rs-calendar-month-dropdown-cell-content,
+.rs-calendar-table-cell-selected .rs-calendar-table-cell-content {
+    background-color : rgba(255, 255, 255, .25);
+}
+.rs-btn-primary:hover {
+    background-color : rgba(255, 255, 255, .5);
+}
+
+.rs-calendar-table-cell-in-range::before {
+    background-color: rgba(255, 255, 255, .1);
+}

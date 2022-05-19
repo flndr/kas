@@ -14,6 +14,7 @@ import { useCalculatorStore } from 'Stores/CalculatorStore';
 import { BREAK }              from 'Styles/media';
 import { dateToString }       from 'Util/date';
 import { stringToDate }       from 'Util/date';
+import { twoDigit }           from 'Util/twoDigit';
 
 const Overflow = styled.div`
   overflow : hidden;
@@ -42,6 +43,7 @@ const Cell = styled.div`
   justify-content : center;
   align-items     : center;
   height          : 38px;
+  opacity         : 0.3;
 
   ${ BREAK.S } {
     height : 46px;
@@ -49,19 +51,37 @@ const Cell = styled.div`
 
 `;
 
+const Header = styled( Cell )`
+  opacity : 1;
+`;
+
 const Day = styled( Cell )`
-  color  : var(--rs-text-primary);
-  border : 1px solid var(--rs-border-primary);
+  color   : var(--rs-text-primary);
+  border  : 1px solid var(--rs-border-primary);
+  opacity : 1;
 `;
 
 const NoWorkingDay = styled( Cell )`
   color           : var(--rs-border-primary);
   border          : 1px solid var(--rs-border-primary);
   text-decoration : line-through;
+  opacity         : 1;
 `;
 
-const Month = styled.h4`
-  color : var(--rs-text-primary);
+const OutsideOfRange = styled( Cell )`
+  color  : var(--rs-border-primary);
+  border : 1px solid var(--rs-border-primary);
+`;
+
+const Month = styled.div`
+  display         : flex;
+  justify-content : space-between;
+  align-items     : baseline;
+
+  & > div {
+    color         : var(--rs-border-primary);
+    padding-right : 3px;
+  }
 `;
 
 interface Props {
@@ -72,10 +92,12 @@ export const Calendar = observer( ( props : Props ) => {
     
     const calculator : CalculatorStore = useCalculatorStore();
     const start                        = stringToDate( props.start );
-    const firstDay                     = startOfWeek( startOfMonth( start ), { weekStartsOn : 1 } );
-    const lastDay                      = endOfWeek( endOfMonth( start ), { weekStartsOn : 1 } );
+    const firstDayMonth                = startOfMonth( start );
+    const firstDay                     = startOfWeek( firstDayMonth, { weekStartsOn : 1 } );
+    const lastDayMonth                 = endOfMonth( start );
+    const lastDay                      = endOfWeek( lastDayMonth, { weekStartsOn : 1 } );
     
-    const days : Date[] = [];
+    let days : Date[] = [];
     
     for ( const d = firstDay; d <= lastDay; d.setDate( d.getDate() + 1 ) ) {
         days.push( new Date( d.getTime() ) );
@@ -83,15 +105,30 @@ export const Calendar = observer( ( props : Props ) => {
     
     days.sort( ( a, b ) => a.getTime() - b.getTime() );
     
+    let arbeitszeit = 0;
+    
+    days.forEach( d => {
+        const tag     = calculator.zusammenfassung.tage.find( t => t.dateString === dateToString( d ) );
+        const inRange = firstDayMonth <= d && d <= lastDayMonth;
+        if ( inRange && tag && !tag.istFeiertagOderWE ) {
+            arbeitszeit += tag.stundenZuArbeiten
+        }
+    } );
+    
+    let arbeitstage = arbeitszeit / 8.25;
+    
     const wochentage = [ ...Object.keys( Wochentag ), 'Samstag', 'Sonntag' ];
     
     return <Overflow>
-        <Month>{ format( start, 'LLLL', { locale : de } ) }</Month>
+        <Month>
+            <h4>{ format( start, 'LLLL', { locale : de } ) }</h4>
+            <div>{ arbeitszeit } Stunden / { arbeitstage } Tage</div>
+        </Month>
         <Container>
             { wochentage.map( t => {
-                return <Cell key={ 'header-tag-' + t }>
+                return <Header key={ 'header-tag-' + t }>
                     { t.substring( 0, 2 ) }
-                </Cell>
+                </Header>
             } ) }
             { days.map( date => {
                 const dateString = dateToString( date );
@@ -106,6 +143,12 @@ export const Calendar = observer( ( props : Props ) => {
                 }
                 
                 const tag = calculator.zusammenfassung.tage.find( t => t.dateString === dateString );
+                
+                if ( !tag ) {
+                    return <OutsideOfRange key={ key }>
+                        { dayString }
+                    </OutsideOfRange>;
+                }
                 
                 if ( !tag || tag.istFeiertagOderWE ) {
                     return <NoWorkingDay key={ key }>

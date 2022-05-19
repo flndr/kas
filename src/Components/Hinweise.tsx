@@ -23,6 +23,7 @@ export const Hinweise = () => <>
         <li>Wochenende wird ignoriert</li>
         <li>Halbwegs mobile-friendly, aber nicht optimiert oder PWA</li>
         <li>Keine Input-Validierung für DAUs</li>
+        <li>Maria Himmelfahrt manuell ausgeschlossen - gem. Prisma kein Feiertag. Gilt das für alle MAs? Weitere Feiertage?</li>
     </ul>
     
     <p>Datentschutz</p>

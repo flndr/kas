@@ -1,3 +1,4 @@
+import { isSpecificHoliday }  from 'feiertagejs';
 import React                  from 'react';
 import { FC }                 from 'react';
 import { useContext }         from 'react';
@@ -139,7 +140,14 @@ export class CalculatorStore {
     }
     
     istFeiertagOderWE( date : Date ) : boolean {
-        return isSaturday( date ) || isSunOrHoliday( date, this.region );
+        if ( isSaturday( date ) ) {
+            return true;
+        }
+        if ( isSunOrHoliday( date, this.region ) &&
+             !isSpecificHoliday( date, 'MARIAHIMMELFAHRT', this.region ) ) {
+            return true;
+        }
+        return false;
     }
     
     istUrlaubstag( dateString : string ) : boolean {
