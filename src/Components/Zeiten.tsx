@@ -1,11 +1,10 @@
 import styled          from '@emotion/styled';
 import { Zeiten as Z } from 'Models/Zeiten';
 import React           from 'react';
-import { media }       from 'Styles/media';
 import { BREAK }       from 'Styles/media';
 import { twoDigit }    from 'Util/twoDigit';
 
-const BREAK_LINES = BREAK.S; media(580);
+const BREAK_LINES = BREAK.S;
 
 const Container = styled.span`
   display         : flex;

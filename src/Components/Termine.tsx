@@ -5,7 +5,6 @@ import { Nw }                   from 'Components/Zusammenfassung/Styles';
 import { format }               from 'date-fns';
 import { observer }             from 'mobx-react';
 import React                    from 'react';
-import { Divider }              from 'rsuite';
 import { SelectPicker }         from 'rsuite';
 import { Checkbox }             from 'rsuite';
 import { DatePickerProps }      from 'rsuite';
@@ -209,8 +208,7 @@ export const Termine = observer( () => {
                 
                 const canEdit = !termin.dateStringEnde;
                 
-                const canEditTime     = !termin.stunden;
-                const canToggleWeekly = termin.typ === TerminTyp.EXTERN && !termin.dateStringEnde;
+                const canEditTime = !termin.stunden;
                 
                 const toggleGanztag = () => {
                     const terminUpdate : Partial<TerminStore> = {

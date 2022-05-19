@@ -14,7 +14,6 @@ import { useCalculatorStore } from 'Stores/CalculatorStore';
 import { BREAK }              from 'Styles/media';
 import { dateToString }       from 'Util/date';
 import { stringToDate }       from 'Util/date';
-import { twoDigit }           from 'Util/twoDigit';
 
 const Overflow = styled.div`
   overflow : hidden;
@@ -24,9 +23,6 @@ const Container = styled.div`
   display         : flex;
   flex-wrap       : wrap;
   justify-content : stretch;
-
-    //margin-right    : -${ 100 / 8 * 2.5 }%;
-
 `;
 
 const Cell = styled.div`

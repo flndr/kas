@@ -1,6 +1,6 @@
-import styled                     from '@emotion/styled';
-import React                      from 'react';
-import { media }                  from 'Styles/media';
+import styled    from '@emotion/styled';
+import React     from 'react';
+import { media } from 'Styles/media';
 
 interface SplitProps {
     splitOn : number | string;

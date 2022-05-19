@@ -1,4 +1,4 @@
-import styled    from '@emotion/styled';
+import styled from '@emotion/styled';
 
 export const ColorDot = styled.span<{ color : string, size? : number }>`
   display          : inline-block;

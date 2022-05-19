@@ -1,4 +1,3 @@
-import { isSpecificHoliday }  from 'feiertagejs';
 import React                  from 'react';
 import { FC }                 from 'react';
 import { useContext }         from 'react';
@@ -7,6 +6,7 @@ import { startOfMonth }       from 'date-fns';
 import { isSaturday }         from 'date-fns';
 import { getYear }            from 'date-fns';
 import { format }             from 'date-fns';
+import { isSpecificHoliday }  from 'feiertagejs';
 import { isSunOrHoliday }     from 'feiertagejs';
 import { getHolidays }        from 'feiertagejs';
 import { Region }             from 'feiertagejs';
@@ -41,11 +41,11 @@ export class CalculatorStore {
     _letzterTagAbruf : string = '2022-10-31';
     
     _arbeitszeiten : Arbeitszeit = {
-        [ Wochentag.Montag ]     : 8.25,
-        [ Wochentag.Dienstag ]   : 8.25,
-        [ Wochentag.Mittwoch ]   : 8.25,
-        [ Wochentag.Donnerstag ] : 8.25,
-        [ Wochentag.Freitag ]    : 8.25,
+        [ Wochentag.Montag ]     : 8,
+        [ Wochentag.Dienstag ]   : 8,
+        [ Wochentag.Mittwoch ]   : 8,
+        [ Wochentag.Donnerstag ] : 8,
+        [ Wochentag.Freitag ]    : 8,
     };
     
     constructor() {
