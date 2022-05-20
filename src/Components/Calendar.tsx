@@ -14,6 +14,7 @@ import { useCalculatorStore } from 'Stores/CalculatorStore';
 import { BREAK }              from 'Styles/media';
 import { dateToString }       from 'Util/date';
 import { stringToDate }       from 'Util/date';
+import { twoDigit }           from 'Util/twoDigit';
 
 const Overflow = styled.div`
   overflow : hidden;
@@ -102,23 +103,22 @@ export const Calendar = observer( ( props : Props ) => {
     days.sort( ( a, b ) => a.getTime() - b.getTime() );
     
     let arbeitszeit = 0;
-    
+    let tage        = 0;
     days.forEach( d => {
         const tag     = calculator.zusammenfassung.tage.find( t => t.dateString === dateToString( d ) );
         const inRange = firstDayMonth <= d && d <= lastDayMonth;
         if ( inRange && tag && !tag.istFeiertagOderWE ) {
-            arbeitszeit += tag.stundenZuArbeiten
+            arbeitszeit += tag.stundenZuArbeiten;
+            tage++;
         }
     } );
-    
-    let arbeitstage = arbeitszeit / 8.25;
     
     const wochentage = [ ...Object.keys( Wochentag ), 'Samstag', 'Sonntag' ];
     
     return <Overflow>
         <Month>
             <h4>{ format( start, 'LLLL', { locale : de } ) }</h4>
-            <div>{ arbeitszeit } Stunden / { arbeitstage } Tage</div>
+            <div>{ twoDigit( arbeitszeit ) } Stunden / { tage } Tage</div>
         </Month>
         <Container>
             { wochentage.map( t => {
